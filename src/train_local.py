@@ -338,13 +338,16 @@ class LocalTrainer:
 
 def main():
     """Main entry point."""
+    # Load config first to use as defaults
+    config = load_config('config.yaml')
+    
     parser = argparse.ArgumentParser(description='Local DCGAN Training')
     
     # Data arguments
     parser.add_argument(
         '--dataset-path',
         type=str,
-        default='../data/celeba',
+        default=config['data']['dataset_path'],
         help='Path to dataset directory'
     )
     
@@ -358,25 +361,25 @@ def main():
     parser.add_argument(
         '--batch-size',
         type=int,
-        default=128,
+        default=config['training']['batch_size'],
         help='Batch size'
     )
     parser.add_argument(
         '--lr',
         type=float,
-        default=0.0002,
+        default=config['training'].get('learning_rate', 0.0002),
         help='Learning rate'
     )
     parser.add_argument(
         '--beta1',
         type=float,
-        default=0.5,
+        default=config['training'].get('beta1', 0.5),
         help='Adam beta1 parameter'
     )
     parser.add_argument(
         '--beta2',
         type=float,
-        default=0.999,
+        default=config['training'].get('beta2', 0.999),
         help='Adam beta2 parameter'
     )
     
@@ -384,13 +387,13 @@ def main():
     parser.add_argument(
         '--latent-dim',
         type=int,
-        default=100,
+        default=config['training']['latent_dim'],
         help='Latent dimension'
     )
     parser.add_argument(
         '--image-size',
         type=int,
-        default=64,
+        default=config['training']['image_size'],
         help='Image size'
     )
     
@@ -418,7 +421,7 @@ def main():
     parser.add_argument(
         '--num-workers',
         type=int,
-        default=4,
+        default=config['data'].get('num_workers_dataloader', 4),
         help='Number of dataloader workers'
     )
     parser.add_argument(

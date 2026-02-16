@@ -21,7 +21,6 @@ build/
 config.yaml
 
 # Dataset
-data/celeba/
 data/celeba_torchvision/
 
 # Generated outputs
