@@ -25,3 +25,9 @@ worker:
 data:
   dataset_path: ./data/celeba  # Path to CelebA dataset
   num_workers_dataloader: 4  # Number of dataloader workers
+
+huggingface:
+  enabled: false  # Set to true to push models to Hugging Face Hub
+  repo_id: YOUR_HF_USERNAME/distributed-gan-celeba  # Your Hugging Face repo
+  token: YOUR_HF_TOKEN  # Get from https://huggingface.co/settings/tokens
+  push_interval: 5  # Push model every N iterations

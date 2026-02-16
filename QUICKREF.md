@@ -147,6 +147,30 @@ cd src
 python main.py --epochs 50 --sample-interval 1
 ```
 
+### Hugging Face Hub integration (optional)
+```bash
+# 1. Install if not already installed
+pip install huggingface-hub
+
+# 2. Create a model repo at https://huggingface.co/new
+
+# 3. Get your token from https://huggingface.co/settings/tokens
+
+# 4. Edit config/config.yaml:
+# huggingface:
+#   enabled: true
+#   repo_id: your-username/distributed-gan-celeba
+#   token: YOUR_HF_TOKEN
+#   push_interval: 5
+
+# 5. Start training - models will auto-push to Hugging Face
+
+# Students can then view progress in real-time by:
+# - Opening notebooks/demo_trained_model.ipynb
+# - Setting USE_HUGGINGFACE = True
+# - Setting HF_REPO_ID = 'your-username/distributed-gan-celeba'
+```
+
 ### Monitoring
 ```bash
 # Watch outputs/samples/ directory for generated images

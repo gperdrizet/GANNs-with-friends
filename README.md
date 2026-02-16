@@ -210,6 +210,57 @@ data:
   dataset_path: ./data/celeba
 ```
 
+## Hugging Face Hub integration (optional)
+
+Push model checkpoints to Hugging Face Hub during training so students can view progress in real-time!
+
+### Setup (for instructors)
+
+1. **Create a Hugging Face account** at [huggingface.co](https://huggingface.co)
+
+2. **Create a new model repository**
+   - Go to [huggingface.co/new](https://huggingface.co/new)
+   - Repository name: `distributed-gan-celeba`
+   - Make it public so students can access it
+
+3. **Get your access token**
+   - Go to [Settings > Access Tokens](https://huggingface.co/settings/tokens)
+   - Create a new token with write permissions
+
+4. **Enable in config**
+   ```yaml
+   huggingface:
+     enabled: true
+     repo_id: YOUR_USERNAME/distributed-gan-celeba
+     token: YOUR_HF_TOKEN
+     push_interval: 5  # Push every 5 iterations
+   ```
+
+5. **Install huggingface-hub**
+   ```bash
+   pip install huggingface-hub
+   ```
+
+### For students
+
+Students can view live training progress by opening the demo notebook and setting:
+
+```python
+USE_HUGGINGFACE = True
+HF_REPO_ID = 'instructor-username/distributed-gan-celeba'
+```
+
+The notebook will automatically download the latest checkpoint and display:
+- Current training iteration and epoch
+- Generated face samples
+- Training loss curves (when available)
+
+**Benefits:**
+- See model improving in real-time during training
+- No need to wait for training to complete
+- Students can explore results even if they weren't able to contribute as workers
+- Automatically handles checkpoint downloads
+
 ## What students learn
 
 ### Distributed systems
@@ -324,34 +375,6 @@ python train_local.py --epochs 1
 - Limited to single GPU
 - Misses distributed systems lessons
 
-### Performance comparison
-```
-Distributed (10 workers, batch=32 each):
-- Effective batch size: ~320 (varies by workers available)
-- Time per iteration: ~15-30s (includes DB overhead)
-- Total training: ~4-5 hours
-- Educational value: High (5/5)
-
-Local (1 GPU, batch=128):
-- Effective batch size: 128
-- Time per iteration: ~2-5s (no overhead)
-- Total training: ~3-4 hours
-- Educational value: Moderate (3/5 - GANs only)
-```
-
-**Both produce similar quality results!** The distributed approach teaches more concepts.
-
-## Expected results
-
-**Training time:** 4-5 hours with 10 workers (mixed consumer GPUs)
-
-**Sample progression:**
-- Iteration 0-100: Random noise
-- Iteration 100-500: Blob-like shapes and colors
-- Iteration 500-1000: Face-like structures emerge
-- Iteration 1000-3000: Recognizable faces with details
-- Iteration 3000+: High-quality celebrity faces
-
 ## Performance tips
 
 ### For students
@@ -384,15 +407,4 @@ This is an educational project! Contributions welcome:
 ## License
 
 MIT License - See LICENSE file for details
-
-## Acknowledgments
-
-- CelebA dataset from MMLAB CUHK
-- DCGAN architecture from Radford et al.
-- Inspired by real distributed training systems
-- Built for AI/ML bootcamp students
-
----
-
-**Questions?** Open an issue or contact your instructor!
 

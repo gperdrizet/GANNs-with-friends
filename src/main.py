@@ -17,7 +17,8 @@ from database.db_manager import DatabaseManager
 from utils import (
     load_config, build_db_url, get_device,
     apply_gradients, weighted_average_gradients,
-    save_generated_images, print_training_stats
+    save_generated_images, print_training_stats,
+    push_to_huggingface
 )
 
 
@@ -85,6 +86,15 @@ class MainCoordinator:
         self.checkpoints_dir = self.output_dir / 'checkpoints'
         self.samples_dir.mkdir(parents=True, exist_ok=True)
         self.checkpoints_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Hugging Face configuration
+        self.hf_enabled = self.config.get('huggingface', {}).get('enabled', False)
+        self.hf_repo_id = self.config.get('huggingface', {}).get('repo_id', '')
+        self.hf_token = self.config.get('huggingface', {}).get('token', '')
+        self.hf_push_interval = self.config.get('huggingface', {}).get('push_interval', 5)
+        
+        if self.hf_enabled:
+            print(f'Hugging Face Hub integration enabled: {self.hf_repo_id}')
         
         print('Main coordinator initialized successfully!')
     
@@ -240,6 +250,28 @@ class MainCoordinator:
         output_path = self.samples_dir / f'iteration_{iteration:06d}.png'
         save_generated_images(fake_images, str(output_path))
         print(f'Saved sample images to {output_path}')
+        
+        return output_path
+    
+    def push_to_hub(self, iteration: int, epoch: int, samples_path: str = None):
+        """Push model to Hugging Face Hub if enabled.
+        
+        Args:
+            iteration: Current training iteration
+            epoch: Current epoch
+            samples_path: Optional path to sample images
+        """
+        if self.hf_enabled and self.hf_repo_id and self.hf_token:
+            if iteration % self.hf_push_interval == 0:
+                push_to_huggingface(
+                    generator=self.generator,
+                    discriminator=self.discriminator,
+                    iteration=iteration,
+                    epoch=epoch,
+                    repo_id=self.hf_repo_id,
+                    token=self.hf_token,
+                    samples_path=samples_path
+                )
     
     def run(self, num_epochs: int = 50, sample_interval: int = 100):
         """Run main training loop.
@@ -296,7 +328,10 @@ class MainCoordinator:
                 # Generate sample images periodically
                 if iteration % sample_interval == 0:
                     print('\nGenerating sample images...')
-                    self.generate_samples(iteration)
+                    samples_path = self.generate_samples(iteration)
+                    
+                    # Push to Hugging Face Hub if enabled
+                    self.push_to_hub(iteration, epoch, str(samples_path))
                 
                 # Print active workers
                 active_workers = self.db.get_active_workers()

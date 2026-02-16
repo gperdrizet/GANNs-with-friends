@@ -256,6 +256,103 @@ def print_training_stats(
     print(stats)
 
 
+def push_to_huggingface(
+    generator: torch.nn.Module,
+    discriminator: torch.nn.Module,
+    iteration: int,
+    epoch: int,
+    repo_id: str,
+    token: str,
+    samples_path: str = None
+):
+    """Push model checkpoint to Hugging Face Hub.
+    
+    Args:
+        generator: Generator model
+        discriminator: Discriminator model
+        iteration: Current training iteration
+        epoch: Current epoch
+        repo_id: Hugging Face repository ID (e.g., 'username/repo')
+        token: Hugging Face authentication token
+        samples_path: Optional path to sample images to upload
+    """
+    try:
+        from huggingface_hub import HfApi, create_repo
+        import tempfile
+        import shutil
+        
+        print(f'Pushing model to Hugging Face Hub: {repo_id}')
+        
+        # Initialize HF API
+        api = HfApi(token=token)
+        
+        # Create repo if it doesn't exist
+        try:
+            create_repo(repo_id, token=token, exist_ok=True, private=False)
+        except Exception as e:
+            print(f'Note: {e}')
+        
+        # Create temporary directory for checkpoint
+        with tempfile.TemporaryDirectory() as tmpdir:
+            checkpoint_path = Path(tmpdir) / 'checkpoint.pth'
+            
+            # Save checkpoint
+            checkpoint = {
+                'iteration': iteration,
+                'epoch': epoch,
+                'generator_state_dict': generator.state_dict(),
+                'discriminator_state_dict': discriminator.state_dict(),
+            }
+            torch.save(checkpoint, checkpoint_path)
+            
+            # Upload checkpoint
+            api.upload_file(
+                path_or_fileobj=str(checkpoint_path),
+                path_in_repo='checkpoint_latest.pth',
+                repo_id=repo_id,
+                repo_type='model',
+                commit_message=f'Update model - iteration {iteration}, epoch {epoch}'
+            )
+            
+            # Upload sample images if provided
+            if samples_path and Path(samples_path).exists():
+                api.upload_file(
+                    path_or_fileobj=samples_path,
+                    path_in_repo=f'samples/iteration_{iteration:06d}.png',
+                    repo_id=repo_id,
+                    repo_type='model'
+                )
+            
+            # Create/update metadata
+            metadata_path = Path(tmpdir) / 'metadata.json'
+            import json
+            metadata = {
+                'iteration': iteration,
+                'epoch': epoch,
+                'model_type': 'DCGAN',
+                'dataset': 'CelebA',
+                'image_size': 64,
+                'latent_dim': 100
+            }
+            with open(metadata_path, 'w') as f:
+                json.dump(metadata, f, indent=2)
+            
+            api.upload_file(
+                path_or_fileobj=str(metadata_path),
+                path_in_repo='metadata.json',
+                repo_id=repo_id,
+                repo_type='model'
+            )
+        
+        print(f'✓ Successfully pushed to Hugging Face Hub')
+        print(f'  View at: https://huggingface.co/{repo_id}')
+        
+    except ImportError:
+        print('ERROR: huggingface_hub not installed. Install with: pip install huggingface-hub')
+    except Exception as e:
+        print(f'ERROR pushing to Hugging Face Hub: {e}')
+
+
 if __name__ == '__main__':
     # Test utilities
     print("Testing utilities...")
