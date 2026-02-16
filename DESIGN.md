@@ -166,7 +166,7 @@ Activations: BatchNorm + LeakyReLU (except output: none)
 
 ### Configuration
 
-**config.yaml template:**
+**config.yaml (in root directory):**
 ```yaml
 database:
   host: <PROVIDED_BY_INSTRUCTOR>
@@ -211,8 +211,7 @@ src/
 scripts/
 └── download_celeba.py        # Dataset download script
 
-config/
-└── config.yaml.template      # Configuration template
+config.yaml.template          # Configuration template (in root)
 ```
 
 ### Fault tolerance

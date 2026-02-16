@@ -25,7 +25,7 @@ from utils import (
 class Worker:
     """Worker for distributed GAN training."""
     
-    def __init__(self, config_path: str = 'config/config.yaml'):
+    def __init__(self, config_path: str = 'config.yaml'):
         """Initialize worker.
         
         Args:
@@ -280,7 +280,7 @@ def main():
     parser.add_argument(
         '--config',
         type=str,
-        default='config/config.yaml',
+        default='config.yaml',
         help='Path to configuration file'
     )
     

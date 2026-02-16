@@ -13,9 +13,9 @@ cd GANNs-with-freinds
 
 # 3. Install dependencies and setup
 pip install -r requirements.txt
-cp config/config.yaml.template config/config.yaml
+cp config.yaml.template config.yaml
 
-# Edit config/config.yaml with database credentials
+# Edit config.yaml with database credentials
 python scripts/download_celeba.py
 ```
 
@@ -156,7 +156,7 @@ pip install huggingface-hub
 
 # 3. Get your token from https://huggingface.co/settings/tokens
 
-# 4. Edit config/config.yaml:
+# 4. Edit config.yaml:
 # huggingface:
 #   enabled: true
 #   repo_id: your-username/distributed-gan-celeba
@@ -236,7 +236,8 @@ LIMIT 10;
 
 ```
 Important files:
-├── config/config.yaml          # YOUR credentials (don't commit!)
+├── config.yaml                 # YOUR credentials (don't commit!)
+├── config.yaml.template        # Template for others
 ├── src/
 │   ├── worker.py               # Students run this
 │   ├── main.py                 # Instructor runs this
@@ -249,8 +250,8 @@ Important files:
 
 | Issue | Solution |
 |-------|----------|
-| Can't connect to DB | Check config.yaml credentials |
-| Out of memory | Reduce batch_size in config.yaml or command line |
+| Can't connect to DB | Check `config.yaml` credentials |
+| Out of memory | Reduce `batch_size` in `config.yaml` or command line |
 | No work available | Wait for main process to create work units |
 | Worker not updating | Check heartbeat in database |
 | Slow training | Need more workers or larger batches |

@@ -25,7 +25,7 @@ from utils import (
 class MainCoordinator:
     """Main coordinator for distributed GAN training."""
     
-    def __init__(self, config_path: str = 'config/config.yaml'):
+    def __init__(self, config_path: str = 'config.yaml'):
         """Initialize coordinator.
         
         Args:
@@ -374,7 +374,7 @@ def main():
     parser.add_argument(
         '--config',
         type=str,
-        default='config/config.yaml',
+        default='config.yaml',
         help='Path to configuration file'
     )
     parser.add_argument(

@@ -48,8 +48,7 @@ GANNs-with-freinds/
 │   └── utils.py                  # Helper functions
 ├── scripts/
 │   └── download_celeba.py        # Dataset download script
-├── config/
-│   └── config.yaml.template      # Configuration template
+├── config.yaml.template          # Configuration template
 ├── notebooks/
 │   └── demo_trained_model.ipynb  # Demo notebook for visualizing results
 ├── data/                         # CelebA dataset goes here
@@ -89,9 +88,9 @@ GANNs-with-freinds/
 
 5. **Configure database connection**
    ```bash
-   cp config/config.yaml.template config/config.yaml
+   cp config.yaml.template config.yaml
    ```
-   Edit `config/config.yaml` with database credentials provided by instructor
+   Edit `config.yaml` with database credentials provided by instructor
 
 6. **Start worker**
    ```bash
@@ -159,7 +158,7 @@ Want to train the same model locally without the distributed setup? Great for ex
    Arguments:
    - `--epochs`: Number of epochs to train (default: 50)
    - `--sample-interval`: Generate samples every N iterations (default: 1)
-   - `--config`: Path to config file (default: config/config.yaml)
+   - `--config`: Path to config file (default: config.yaml)
 
 5. **Monitor progress**
    - Generated samples appear in `outputs/samples/`
@@ -186,7 +185,7 @@ Want to train the same model locally without the distributed setup? Great for ex
 
 ## Configuration
 
-Edit `config/config.yaml`:
+Edit `config.yaml`:
 
 ```yaml
 database:
@@ -227,7 +226,7 @@ Push model checkpoints to Hugging Face Hub during training so students can view 
    - Go to [Settings > Access Tokens](https://huggingface.co/settings/tokens)
    - Create a new token with write permissions
 
-4. **Enable in config**
+4. **Add to config.yaml**
    ```yaml
    huggingface:
      enabled: true
@@ -307,12 +306,12 @@ GROUP BY status;
 ## Troubleshooting
 
 **Worker can't connect to database:**
-- Verify config.yaml has correct credentials
+- Verify `config.yaml` has correct credentials
 - Check database is publicly accessible
 - Test connection: `psql -h HOST -U USER -d DATABASE`
 
 **Worker runs out of memory:**
-- Reduce `batch_size` in config.yaml
+- Reduce `batch_size` in `config.yaml`
 - Reduce `num_workers_dataloader` to 2 or 0
 - Close other GPU applications
 

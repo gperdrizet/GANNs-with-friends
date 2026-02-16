@@ -68,7 +68,7 @@ def download_celeba(output_dir='./data'):
         print(f'\nDataset downloaded successfully!')
         print(f"Location: {celeba_dir / 'celeba'}")
         print(f'Number of images: {len(dataset)}')
-        print('\nYou can now use this dataset path in your config.yaml:')
+        print('\nYou can now add this to your config.yaml:')
         print(f"  dataset_path: {celeba_dir / 'celeba' / 'img_align_celeba'}")
         
         return True

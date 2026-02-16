@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from database.db_manager import DatabaseManager
 
 
-def load_config(config_path: str = 'config/config.yaml'):
+def load_config(config_path: str = 'config.yaml'):
     """Load configuration from YAML file."""
     with open(config_path, 'r') as f:
         return yaml.safe_load(f)

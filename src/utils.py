@@ -14,7 +14,7 @@ import torchvision.utils as vutils
 from PIL import Image
 
 
-def load_config(config_path: str = 'config/config.yaml') -> Dict[str, Any]:
+def load_config(config_path: str = 'config.yaml') -> Dict[str, Any]:
     """Load configuration from YAML file.
     
     Args:
