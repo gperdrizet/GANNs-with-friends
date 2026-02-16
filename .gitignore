@@ -18,7 +18,7 @@ build/
 *.ckpt
 
 # Config with credentials
-config/config.yaml
+config.yaml
 
 # Dataset
 data/celeba/
