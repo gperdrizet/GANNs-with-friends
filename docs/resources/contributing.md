@@ -30,8 +30,8 @@ source venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Install development dependencies
-pip install pytest black pylint mypy
+# Install development dependencies (optional)
+pip install black pylint mypy
 ```
 
 ### Create a branch
@@ -49,19 +49,20 @@ Edit code following the project conventions (see below).
 ### 2. Test your changes
 
 ```bash
-# Run tests
-pytest tests/
+# Test manually by running the code
+python src/worker.py --config config.yaml
+# Or for local training:
+python src/train_local.py --config config.yaml
 
-# Run specific test
-pytest tests/test_models.py
-
-# Check code style
+# Check code style (optional)
 black src/
 pylint src/
 
-# Type checking
+# Type checking (optional)
 mypy src/
 ```
+
+**Note:** This project doesn't currently have automated tests. Please test your changes manually by running the code and verifying functionality.
 
 ### 3. Commit
 
@@ -142,29 +143,35 @@ Keep documentation professional and accessible.
 
 ## Testing
 
-### Write tests for new features
+**Note:** This project does not currently have automated tests. This is one of our highest priority contribution areas!
 
-```python
-# tests/test_worker.py
-import pytest
-from src.worker import Worker
+### Manual testing
 
-def test_worker_initialization():
-    worker = Worker('test_config.yaml')
-    assert worker.device is not None
-    assert worker.batch_size > 0
+For now, test your changes manually:
 
-def test_worker_processes_work_unit():
-    # Test work unit processing
-    worker = Worker('test_config.yaml')
-    # Mock work unit test here
-```
+1. **Test worker functionality:**
+   ```bash
+   python src/worker.py --config config.yaml
+   # Watch for errors, verify it connects to database
+   ```
 
-### Run full test suite
+2. **Test coordinator:**
+   ```bash
+   python src/main.py --config config.yaml
+   # Verify it creates work units and aggregates gradients
+   ```
 
-```bash
-pytest tests/ -v
-```
+3. **Test local training:**
+   ```bash
+   python src/train_local.py --config config.yaml
+   # Verify training runs without errors
+   ```
+
+4. **Check generated samples** in `data/outputs/samples/`
+
+### Contributing automated tests
+
+We would greatly appreciate contributions to add automated testing! See the Priority Contributions section below.
 
 ## Documentation
 
@@ -197,7 +204,7 @@ make serve  # View at http://localhost:8000
 
 ### Before submitting
 
-- Tests pass
+- Changes tested manually (run the code and verify functionality)
 - Code follows style guide
 - Documentation updated
 - Commits are clean and logical
@@ -217,10 +224,10 @@ Brief description of changes
 - [ ] Code refactoring
 
 ## Testing
-How were changes tested?
+How were changes tested manually?
 
 ## Checklist
-- [ ] Tests pass
+- [ ] Tested manually (describe how)
 - [ ] Code follows style guide
 - [ ] Documentation updated
 - [ ] No breaking changes (or documented)
@@ -302,9 +309,10 @@ For major features, discuss with maintainers before implementing.
 ### Priority contributions
 
 1. **Testing**
-   - Increase test coverage
-   - Add integration tests
-   - Test edge cases
+   - **Create automated test suite** (currently no tests exist!)
+   - Add unit tests for models, database operations, worker logic
+   - Add integration tests for full training workflows
+   - Test edge cases and error handling
 
 2. **Documentation**
    - Improve clarity
@@ -613,7 +621,7 @@ CUDA_VISIBLE_DEVICES=0 python src/worker.py --config config.yaml &
 **Before implementing:**
 - Profile to confirm the optimization is needed
 - Understand the trade-offs (complexity vs. performance gain)
-- Write tests for new functionality
+- Test manually to verify functionality
 - Document the changes thoroughly
 - Consider backward compatibility
 
