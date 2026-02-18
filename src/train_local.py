@@ -26,7 +26,7 @@ class LocalTrainer:
     def __init__(
         self,
         dataset_path: str,
-        output_dir: str = 'outputs_local',
+        output_dir: str = 'data/outputs_local',
         batch_size: int = 128,
         latent_dim: int = 100,
         image_size: int = 64,
@@ -405,7 +405,7 @@ def main():
     parser.add_argument(
         '--output-dir',
         type=str,
-        default='outputs_local',
+        default='data/outputs_local',
         help='Output directory'
     )
     parser.add_argument(

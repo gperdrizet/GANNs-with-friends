@@ -3,7 +3,6 @@ __pycache__
 data/
 logs/
 models/
-outputs/
 *.pyc
 *.pyo
 *.pyd
@@ -24,10 +23,8 @@ config.yaml
 data/celeba_torchvision/
 
 # Generated outputs
-outputs/samples/
-outputs/checkpoints/
-outputs_local/samples/
-outputs_local/checkpoints/
+data/outputs/
+data/outputs_local/
 
 # IDE
 .vscode/

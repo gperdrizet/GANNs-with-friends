@@ -142,7 +142,7 @@ training:
 
 ```bash
 # Check sample images
-ls outputs/samples/
+ls data/outputs/samples/
 ```
 
 ### Training very slow

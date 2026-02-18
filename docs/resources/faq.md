@@ -86,7 +86,7 @@ Different work units have different batches. Loss varies across batches. Look at
 
 - Samples generated every N iterations (instructor sets this)
 - Results improve over time
-- Check `outputs/samples/` or Hugging Face
+- Check `data/outputs/samples/` or Hugging Face
 - Realistic faces emerge after many iterations
 
 ### Can I train my own model?
@@ -154,7 +154,7 @@ Yes! CPU workers contribute, though slower than GPU. Every worker helps.
 ### How do I view generated faces?
 
 Options:
-1. Check `outputs/samples/` (if coordinator)
+1. Check `data/outputs/samples/` (if coordinator)
 2. Open demo notebook: `notebooks/demo_trained_model.ipynb`
 3. View on Hugging Face (if enabled)
 

@@ -82,7 +82,7 @@ class MainCoordinator:
         self.fixed_noise = torch.randn(64, self.latent_dim, 1, 1, device=self.device)
         
         # Output directories
-        self.output_dir = Path('outputs')
+        self.output_dir = Path('data/outputs')
         self.samples_dir = self.output_dir / 'samples'
         self.checkpoints_dir = self.output_dir / 'checkpoints'
         self.samples_dir.mkdir(parents=True, exist_ok=True)

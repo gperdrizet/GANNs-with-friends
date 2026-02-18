@@ -193,10 +193,10 @@ Run with: `python monitor.py`
 
 ```bash
 # View latest samples
-ls -lt outputs/samples/ | head
+ls -lt data/outputs/samples/ | head
 
 # Display in terminal (if using imgcat or similar)
-imgcat outputs/samples/iteration_0010.png
+imgcat data/outputs/samples/iteration_0010.png
 ```
 
 ### Create GIF of progress
@@ -207,7 +207,7 @@ import glob
 
 # Load all sample images
 images = []
-for filepath in sorted(glob.glob('outputs/samples/iteration_*.png')):
+for filepath in sorted(glob.glob('data/outputs/samples/iteration_*.png')):
     images.append(Image.open(filepath))
 
 # Save as GIF

@@ -89,7 +89,7 @@ Watch the output for:
 - Loss values
 - Sample generation
 
-Check generated samples in `outputs/samples/`.
+Check generated samples in `data/outputs/samples/`.
 
 ## Optional: Hugging Face integration
 

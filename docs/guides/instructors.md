@@ -120,7 +120,7 @@ Applied gradient update
 Generator loss: 2.345
 Discriminator loss: 1.234
 
-Generated samples saved to outputs/samples/iteration_0001.png
+Generated samples saved to data/outputs/samples/iteration_0001.png
 Pushed checkpoint to Hugging Face
 
 Creating work units for iteration 2...
@@ -204,7 +204,7 @@ while True:
 
 ### Generated samples
 
-Check `outputs/samples/` for periodic image samples. Share with class to show progress.
+Check `data/outputs/samples/` for periodic image samples. Share with class to show progress.
 
 ### Hugging Face integration
 

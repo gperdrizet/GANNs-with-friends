@@ -65,7 +65,7 @@ python src/train_local.py \
   --epochs 50 \                    # Number of epochs
   --batch-size 128 \               # Batch size
   --dataset-path data/celeba \     # Dataset location
-  --output-dir outputs_local       # Output directory
+  --output-dir data/outputs_local  # Output directory
 ```
 
 ### Advanced options
@@ -89,7 +89,7 @@ Continue from a checkpoint:
 
 ```bash
 python src/train_local.py \
-  --resume outputs_local/checkpoints/checkpoint_epoch_0025.pth \
+  --resume data/outputs_local/checkpoints/checkpoint_epoch_0025.pth \
   --epochs 100
 ```
 
@@ -100,7 +100,7 @@ python src/train_local.py \
 View generated images during training:
 
 ```bash
-ls outputs_local/samples/
+ls data/outputs_local/samples/
 # epoch_001.png
 # epoch_002.png
 # ...
@@ -113,7 +113,7 @@ Open these images to see the generator improving.
 Model checkpoints saved periodically:
 
 ```bash
-ls outputs_local/checkpoints/
+ls data/outputs_local/checkpoints/
 # checkpoint_epoch_0005.pth
 # checkpoint_epoch_0010.pth
 # checkpoint_latest.pth
@@ -144,7 +144,7 @@ The notebook can load local checkpoints:
 
 ```python
 # In notebook, point to local checkpoint
-checkpoint_path = '../outputs_local/checkpoints/checkpoint_latest.pth'
+checkpoint_path = '../data/outputs_local/checkpoints/checkpoint_latest.pth'
 ```
 
 ### Manual inspection
@@ -154,7 +154,7 @@ import torch
 from src.models.dcgan import Generator
 
 # Load checkpoint
-checkpoint = torch.load('outputs_local/checkpoints/checkpoint_latest.pth')
+checkpoint = torch.load('data/outputs_local/checkpoints/checkpoint_latest.pth')
 
 # Create generator
 generator = Generator(latent_dim=100)
