@@ -33,7 +33,8 @@ class LocalTrainer:
         lr: float = 0.0002,
         beta1: float = 0.5,
         beta2: float = 0.999,
-        num_workers: int = 4
+        num_workers: int = 4,
+        gpu_id: int = 0
     ):
         """Initialize local trainer.
         
@@ -47,8 +48,9 @@ class LocalTrainer:
             beta1: Adam beta1 parameter
             beta2: Adam beta2 parameter
             num_workers: Number of dataloader workers
+            gpu_id: GPU device ID to use (default: 0)
         """
-        self.device = get_device()
+        self.device = get_device(gpu_id)
         self.batch_size = batch_size
         self.latent_dim = latent_dim
         
@@ -432,6 +434,12 @@ def main():
         default=None,
         help='Path to checkpoint to resume from'
     )
+    parser.add_argument(
+        '--gpu',
+        type=int,
+        default=0,
+        help='GPU device ID to use (default: 0)'
+    )
     
     args = parser.parse_args()
     
@@ -445,7 +453,8 @@ def main():
         lr=args.lr,
         beta1=args.beta1,
         beta2=args.beta2,
-        num_workers=args.num_workers
+        num_workers=args.num_workers,
+        gpu_id=args.gpu
     )
     
     # Train

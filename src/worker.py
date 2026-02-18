@@ -25,11 +25,12 @@ from utils import (
 class Worker:
     """Worker for distributed GAN training."""
     
-    def __init__(self, config_path: str = 'config.yaml'):
+    def __init__(self, config_path: str = 'config.yaml', gpu_id: int = 0):
         """Initialize worker.
         
         Args:
             config_path: Path to configuration file
+            gpu_id: GPU device ID to use (default: 0)
         """
         print('Initializing worker...')
         
@@ -43,10 +44,10 @@ class Worker:
         # Generate worker ID
         self.worker_id = generate_worker_id()
         self.hostname = get_hostname()
-        self.gpu_name = get_gpu_name()
+        self.gpu_name = get_gpu_name(gpu_id)
         
         # Setup device
-        self.device = get_device()
+        self.device = get_device(gpu_id)
         
         # Get batch size from config
         self.batch_size = self.config['training']['batch_size']
@@ -292,11 +293,17 @@ def main():
         default='config.yaml',
         help='Path to configuration file'
     )
+    parser.add_argument(
+        '--gpu',
+        type=int,
+        default=0,
+        help='GPU device ID to use (default: 0)'
+    )
     
     args = parser.parse_args()
     
     # Create and run worker
-    worker = Worker(config_path=args.config)
+    worker = Worker(config_path=args.config, gpu_id=args.gpu)
     worker.run()
 
 

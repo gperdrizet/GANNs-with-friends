@@ -25,11 +25,12 @@ from utils import (
 class MainCoordinator:
     """Main coordinator for distributed GAN training."""
     
-    def __init__(self, config_path: str = 'config.yaml'):
+    def __init__(self, config_path: str = 'config.yaml', gpu_id: int = 0):
         """Initialize coordinator.
         
         Args:
             config_path: Path to configuration file
+            gpu_id: GPU device ID to use (default: 0)
         """
         print('Initializing main coordinator...')
         
@@ -41,7 +42,7 @@ class MainCoordinator:
         self.db = DatabaseManager(db_url)
         
         # Setup device
-        self.device = get_device()
+        self.device = get_device(gpu_id)
         
         # Load dataset to get size
         print('Loading dataset...')
@@ -394,11 +395,17 @@ def main():
         action='store_true',
         help='Initialize training state (use for first run)'
     )
+    parser.add_argument(
+        '--gpu',
+        type=int,
+        default=0,
+        help='GPU device ID to use (default: 0)'
+    )
     
     args = parser.parse_args()
     
     # Create coordinator
-    coordinator = MainCoordinator(config_path=args.config)
+    coordinator = MainCoordinator(config_path=args.config, gpu_id=args.gpu)
     
     # Run training
     coordinator.run(num_epochs=args.epochs, sample_interval=args.sample_interval)

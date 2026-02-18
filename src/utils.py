@@ -42,29 +42,41 @@ def build_db_url(db_config: Dict[str, Any]) -> str:
     )
 
 
-def get_device() -> torch.device:
+def get_device(gpu_id: int = 0) -> torch.device:
     """Get available device (CUDA if available, else CPU).
+    
+    Args:
+        gpu_id: GPU device ID to use (default: 0)
     
     Returns:
         PyTorch device
     """
     if torch.cuda.is_available():
-        device = torch.device('cuda')
-        print(f'Using GPU: {torch.cuda.get_device_name(0)}')
+        if gpu_id >= torch.cuda.device_count():
+            print(f'Warning: GPU {gpu_id} not available. Available GPUs: {torch.cuda.device_count()}')
+            print(f'Falling back to GPU 0')
+            gpu_id = 0
+        device = torch.device(f'cuda:{gpu_id}')
+        print(f'Using GPU {gpu_id}: {torch.cuda.get_device_name(gpu_id)}')
     else:
         device = torch.device('cpu')
-        print('Using CPU')
+        print('Using CPU (no CUDA available)')
     
     return device
 
 
-def get_gpu_name() -> str:
+def get_gpu_name(gpu_id: int = 0) -> str:
     """Get GPU name if available.
+    
+    Args:
+        gpu_id: GPU device ID to query (default: 0)
     
     Returns:
         GPU name or 'CPU'
     """
     if torch.cuda.is_available():
+        if gpu_id < torch.cuda.device_count():
+            return torch.cuda.get_device_name(gpu_id)
         return torch.cuda.get_device_name(0)
     return 'CPU'
 
