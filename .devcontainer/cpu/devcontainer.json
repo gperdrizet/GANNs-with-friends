@@ -62,7 +62,7 @@
 
 	// Use 'postCreateCommand' to run commands once after the container is created
 	// Install CPU-only requirements after container creation
-	"postCreateCommand": "mkdir -p logs && mkdir -p models && mkdir -p data && pip install -r requirements-cpu.txt",
+	"postCreateCommand": "mkdir -p logs && mkdir -p models && mkdir -p data && pip install -r .devcontainer/cpu/requirements.txt",
 
 	// Use 'postAttachCommand' to run TensorBoard
 	"postAttachCommand": ""

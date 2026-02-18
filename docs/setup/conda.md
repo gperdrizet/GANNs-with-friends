@@ -56,7 +56,7 @@ conda env create -f environment.yml
 
 **CPU-only (no GPU):**
 ```bash
-conda env create -f environment-cpu.yml
+conda env create -f .devcontainer/cpu/environment.yml
 ```
 
 This creates an environment named `ganns-with-friends` (or `ganns-with-friends-cpu`) with all dependencies.
@@ -181,7 +181,7 @@ Includes:
 - PIL, PyYAML, psycopg2
 - huggingface-hub (via pip)
 
-### environment-cpu.yml (CPU-only)
+### .devcontainer/cpu/environment.yml (CPU-only)
 
 Same as above but:
 - PyTorch CPU-only build

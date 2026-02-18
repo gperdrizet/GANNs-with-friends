@@ -65,7 +65,7 @@ pip install -r requirements.txt
 
 **CPU-only (no GPU):**
 ```bash
-pip install -r requirements-cpu.txt
+pip install -r .devcontainer/cpu/requirements.txt
 ```
 
 This installs:

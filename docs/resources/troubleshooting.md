@@ -31,7 +31,7 @@ nvidia-smi
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # For CPU-only:
-pip install -r requirements-cpu.txt
+pip install -r .devcontainer/cpu/requirements.txt
 ```
 
 ### Database connection fails
