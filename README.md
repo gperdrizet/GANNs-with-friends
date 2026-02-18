@@ -2,6 +2,25 @@
 
 An educational distributed deep learning system where students become part of a compute cluster to train a GAN (Generative Adversarial Network) to generate celebrity faces.
 
+## Documentation
+
+**[📚 Full documentation](https://gperdrizet.github.io/GANNs-with-freinds/)** (coming soon)
+
+For detailed guides, visit the docs:
+- [Getting started](docs/getting-started/overview.md)
+- [Installation options](docs/getting-started/installation.md)
+- [Student guide](docs/guides/students.md)
+- [Instructor guide](docs/guides/instructors.md)
+- [Architecture overview](docs/architecture/overview.md)
+
+Build docs locally:
+```bash
+cd docs
+pip install -r requirements.txt
+make html
+make serve  # View at http://localhost:8000
+```
+
 ## Concept
 
 This project demonstrates distributed machine learning by:
