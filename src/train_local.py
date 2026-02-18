@@ -68,7 +68,9 @@ class LocalTrainer:
             shuffle=True,
             num_workers=num_workers,
             pin_memory=True,
-            drop_last=True
+            drop_last=True,
+            prefetch_factor=4,        # Pre-load 4 batches per worker for better GPU utilization
+            persistent_workers=True if num_workers > 0 else False  # Keep workers alive between epochs
         )
         print(f'Dataset loaded: {len(dataset)} images')
         

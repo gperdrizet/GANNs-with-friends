@@ -48,6 +48,14 @@ class Worker:
         # Setup device
         self.device = get_device()
         
+        # Adjust batch size for CPU if needed
+        self.batch_size = self.config['training']['batch_size']
+        if not torch.cuda.is_available():
+            # Use smaller batch size for CPU training
+            cpu_batch_size = max(8, self.batch_size // 4)
+            print(f'CPU detected: reducing batch size from {self.batch_size} to {cpu_batch_size}')
+            self.batch_size = cpu_batch_size
+        
         # Load dataset
         print('Loading dataset...')
         self.dataset = CelebADataset(
@@ -71,7 +79,6 @@ class Worker:
         self.db.register_worker(self.worker_id, self.hostname, self.gpu_name)
         
         # Training config
-        self.batch_size = self.config['training']['batch_size']
         self.latent_dim = self.config['training']['latent_dim']
         self.poll_interval = self.config['worker']['poll_interval']
         self.heartbeat_interval = self.config['worker']['heartbeat_interval']

@@ -1,4 +1,4 @@
-# Distributed GAN Training with Students as Workers
+# Distributed GAN training with students as workers
 
 An educational distributed deep learning system where students become part of a compute cluster to train a GAN (Generative Adversarial Network) to generate celebrity faces.
 
@@ -62,7 +62,47 @@ GANNs-with-freinds/
 
 ## Quick start
 
-### For students (workers)
+Choose the path that works best for your setup:
+
+| Path | GPU required | Docker required | Best for |
+|------|--------------|-----------------|----------|
+| **1. Google Colab** | No (free GPU provided) | No | Zero installation, quick start |
+| **2. Dev container** | Recommended | Yes | Full development environment |
+| **3. Native Python** | Optional | No | Direct local installation |
+| **4. Conda** | Optional | No | Conda users |
+
+### Path 1: Google Colab (easiest, no installation)
+
+Perfect for students without local GPU or who want to start immediately.
+
+1. **Open the Colab notebook**
+   - Go to [Google Colab](https://colab.research.google.com/)
+   - File → Open notebook → GitHub tab
+   - Enter: `gperdrizet/GANNs-with-freinds`
+   - Select: `notebooks/run_worker_colab.ipynb`
+
+2. **Enable GPU runtime**
+   - Runtime → Change runtime type
+   - Hardware accelerator → GPU → T4
+   - Save
+
+3. **Run all cells**
+   - Runtime → Run all
+   - Follow prompts to configure database credentials
+   - Training starts automatically
+
+Your Colab GPU is now part of the training cluster!
+
+### Path 2: Dev container (recommended for development)
+
+Full development environment with GPU support.
+
+**Prerequisites:**
+- Docker with GPU support installed
+- NVIDIA drivers (version ≥545)
+- VS Code with Dev Containers extension
+
+**Steps:**
 
 1. **Fork and clone this repository**
    ```bash
@@ -72,19 +112,65 @@ GANNs-with-freinds/
 
 2. **Open in dev container**
    - Open VS Code
-   - Click "Reopen in Container" when prompted
+   - Click 'Reopen in Container' when prompted
    - Wait for container to build
 
+3. **Download CelebA dataset**
+   ```bash
+   python scripts/download_celeba.py
+   ```
+   This will automatically download the dataset using torchvision (~1.4 GB)
+
+4. **Configure database connection**
+   ```bash
+   cp config.yaml.template config.yaml
+   ```
+   Edit `config.yaml` with database credentials provided by instructor
+
+5. **Start worker**
+   ```bash
+   python src/worker.py
+   ```
+
+### Path 3: Native Python (no Docker needed)
+
+Direct installation on your system.
+
+**Prerequisites:**
+- Python 3.10 or later
+- pip package manager
+- NVIDIA GPU + CUDA 11.8 (or CPU-only, see below)
+
+**Steps:**
+
+1. **Fork and clone this repository**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/GANNs-with-freinds.git
+   cd GANNs-with-freinds
+   ```
+
+2. **Create virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
 3. **Install dependencies**
+   
+   With GPU (CUDA 11.8):
    ```bash
    pip install -r requirements.txt
+   ```
+   
+   CPU-only (no GPU):
+   ```bash
+   pip install -r requirements-cpu.txt
    ```
 
 4. **Download CelebA dataset**
    ```bash
    python scripts/download_celeba.py
    ```
-   This will automatically download the dataset using torchvision (~1.4 GB)
 
 5. **Configure database connection**
    ```bash
@@ -94,22 +180,64 @@ GANNs-with-freinds/
 
 6. **Start worker**
    ```bash
-   cd src
-   python worker.py
+   python src/worker.py
    ```
 
-   Your GPU is now part of the training cluster!
+### Path 4: Conda environment
 
-### Alternative: Local training (single GPU)
+For conda users.
+
+**Prerequisites:**
+- Anaconda or Miniconda installed
+- NVIDIA GPU + drivers (or CPU-only, see below)
+
+**Steps:**
+
+1. **Fork and clone this repository**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/GANNs-with-freinds.git
+   cd GANNs-with-freinds
+   ```
+
+2. **Create conda environment**
+   
+   With GPU:
+   ```bash
+   conda env create -f environment.yml
+   conda activate ganns-with-friends
+   ```
+   
+   CPU-only (no GPU):
+   ```bash
+   conda env create -f environment-cpu.yml
+   conda activate ganns-with-friends-cpu
+   ```
+
+3. **Download CelebA dataset**
+   ```bash
+   python scripts/download_celeba.py
+   ```
+
+4. **Configure database connection**
+   ```bash
+   cp config.yaml.template config.yaml
+   ```
+   Edit `config.yaml` with database credentials provided by instructor
+
+5. **Start worker**
+   ```bash
+   python src/worker.py
+   ```
+
+### Alternative: Local training (single GPU, no database)
 
 Want to train the same model locally without the distributed setup? Great for experimentation and comparison!
 
-1. **Follow setup steps 1-4 above** (skip database configuration)
+1. **Follow any setup path above** (skip database configuration)
 
 2. **Start local training**
    ```bash
-   cd src
-   python train_local.py --epochs 50 --batch-size 128
+   python src/train_local.py --epochs 50 --batch-size 128
    ```
 
    Arguments:
@@ -125,15 +253,10 @@ Want to train the same model locally without the distributed setup? Great for ex
    - Generated samples: `outputs_local/samples/`
    - Checkpoints: `outputs_local/checkpoints/`
 
-4. **View results** (after training)
+4. **View results**
    ```bash
-   # Open the demo notebook in Jupyter
    jupyter notebook notebooks/demo_trained_model.ipynb
    ```
-   The notebook shows:
-   - Training curves (loss plots)
-   - Generated face samples
-   - Training progression over time
 
 ### For instructor (main coordinator)
 
@@ -142,17 +265,16 @@ Want to train the same model locally without the distributed setup? Great for ex
    - Create credentials for each student
    - Create shared table
 
-2. **Follow student setup steps 1-5**
+2. **Follow any student setup path above**
 
 3. **Initialize database**
    ```bash
-   cd src
-   python database/init_db.py
+   python src/database/init_db.py
    ```
 
 4. **Start main coordinator**
    ```bash
-   python main.py --epochs 50 --sample-interval 1
+   python src/main.py --epochs 50 --sample-interval 1
    ```
 
    Arguments:
@@ -165,23 +287,42 @@ Want to train the same model locally without the distributed setup? Great for ex
    - Check database for worker statistics
    - Training stops automatically when complete
 
-6. **View results** (after training)
+6. **View results**
    ```bash
    jupyter notebook notebooks/demo_trained_model.ipynb
    ```
-   The demo notebook visualizes training results and generates new faces.
 
 ## Requirements
 
-### Hardware
-- **NVIDIA GPU** (any consumer GPU works, even older models)
-- **Minimum 4GB VRAM** (larger batches need more)
-- **10GB free disk space** (for CelebA dataset)
+Requirements vary by installation path:
 
-### Software
-- **Docker** with GPU support
-- **VS Code** with Dev Containers extension
-- **NVIDIA drivers** (version ≥545)
+### Minimum (all paths)
+- **10GB free disk space** (for CelebA dataset)
+- **Internet connection** (for dataset download and database access)
+
+### Hardware (optional)
+- **NVIDIA GPU** (recommended for faster training, any consumer GPU works)
+- **4GB+ VRAM** (for GPU training with default batch sizes)
+- **CPU-only** (works but slower, automatic detection in worker)
+
+### Software (path-dependent)
+
+**Path 1 (Google Colab):**
+- Google account only, everything else provided
+
+**Path 2 (Dev container):**
+- Docker with GPU support
+- VS Code with Dev Containers extension
+- NVIDIA drivers (version ≥545) for GPU support
+
+**Path 3 (Native Python):**
+- Python 3.10 or later
+- pip package manager
+- NVIDIA drivers for GPU (or CPU-only mode)
+
+**Path 4 (Conda):**
+- Anaconda or Miniconda
+- NVIDIA drivers for GPU (or CPU-only mode)
 
 ## Configuration
 

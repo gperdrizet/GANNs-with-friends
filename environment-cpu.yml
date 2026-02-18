@@ -1,0 +1,16 @@
+name: ganns-with-friends-cpu
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch=2.0.1
+  - torchvision=0.15.2
+  - cpuonly
+  - pillow>=9.0.0
+  - pyyaml>=6.0
+  - psycopg2>=2.9.0
+  - pip
+  - pip:
+    - huggingface-hub>=0.20.0

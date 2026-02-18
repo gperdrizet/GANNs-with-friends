@@ -355,7 +355,7 @@ def push_to_huggingface(
 
 if __name__ == '__main__':
     # Test utilities
-    print("Testing utilities...")
+    print('Testing utilities...')
     
     device = get_device()
     print(f'Device: {device}')
@@ -373,4 +373,4 @@ if __name__ == '__main__':
     print(format_time(125))
     print(format_time(45))
     
-    print("\nUtilities tested successfully!")
+    print('\nUtilities tested successfully!')

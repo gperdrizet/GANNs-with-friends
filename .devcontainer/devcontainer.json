@@ -8,7 +8,7 @@
 	"name": "DeepLearning GPU",
 	"image": "gperdrizet/deeplearning-gpu",
     "runArgs": [
-		"--gpus", "0",                // Enable all available GPUs in the container
+		"--gpus", "device=0",         // Use only GPU 0
 		"--pid=host",                 // Use host PIDs, needed for nvidia-smi process list
 		"--ipc=host",                 // Connect to host interprocess namespace
 		"--ulimit", "memlock=-1",     // Turn of memory lock limit
