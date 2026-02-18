@@ -48,13 +48,8 @@ class Worker:
         # Setup device
         self.device = get_device()
         
-        # Adjust batch size for CPU if needed
+        # Get batch size from config
         self.batch_size = self.config['training']['batch_size']
-        if not torch.cuda.is_available():
-            # Use smaller batch size for CPU training
-            cpu_batch_size = max(8, self.batch_size // 4)
-            print(f'CPU detected: reducing batch size from {self.batch_size} to {cpu_batch_size}')
-            self.batch_size = cpu_batch_size
         
         # Load dataset
         print('Loading dataset...')
@@ -204,10 +199,17 @@ class Worker:
         print(f'G_loss: {avg_g_loss:.4f} | D_loss: {avg_d_loss:.4f} | '
               f'D_real: {d_real_acc:.2%} | D_fake: {d_fake_acc:.2%}')
         
-        # Extract gradients
+        # Extract gradients and average them by number of batches
+        # This ensures workers with different batch sizes contribute equally
         print('Extracting gradients...')
         gen_gradients = compute_gradient_dict(self.generator)
         disc_gradients = compute_gradient_dict(self.discriminator)
+        
+        # Average gradients by number of batches processed
+        for name in gen_gradients:
+            gen_gradients[name] /= num_batches
+        for name in disc_gradients:
+            disc_gradients[name] /= num_batches
         
         # Upload gradients to database
         print('Uploading gradients...')

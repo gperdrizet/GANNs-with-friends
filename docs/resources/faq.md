@@ -10,7 +10,7 @@ An educational distributed deep learning system where students collectively trai
 
 ### Do I need a GPU?
 
-No. The system works with CPU-only workers (automatically adjusted batch sizes). GPU is faster but optional.
+No. The system works with CPU-only workers. GPU is faster but optional.
 
 ### How long does training take?
 

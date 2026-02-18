@@ -322,7 +322,7 @@ Requirements vary by installation path:
 ### Hardware (optional)
 - **NVIDIA GPU** (recommended for faster training, any consumer GPU works)
 - **4GB+ VRAM** (for GPU training with default batch sizes)
-- **CPU-only** (works but slower, automatic detection in worker)
+- **CPU-only** (works but slower, hardware auto-detected)
 
 ### Software (path-dependent)
 

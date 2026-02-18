@@ -82,7 +82,7 @@ training:
 - Number of images per batch
 - Larger = more stable but more memory
 - Typical range: 16-128
-- Auto-reduced for CPU workers
+- Reduce if you encounter out-of-memory errors
 
 **`batches_per_work_unit`** (integer, default: 10)
 - How many batches in each work unit
@@ -280,7 +280,7 @@ training:
 
 ```yaml
 training:
-  batch_size: 8  # Auto-adjusted by worker
+  batch_size: 8
   batches_per_work_unit: 5
   num_workers_per_update: 3
 ```

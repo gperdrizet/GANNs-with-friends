@@ -47,7 +47,7 @@ When you open this project in VS Code, it will prompt you to select a configurat
 1. **DeepLearning GPU** - for GPU machines
 2. **DeepLearning CPU** - for Macs and CPU-only machines
 
-The worker code automatically detects your hardware and adjusts batch sizes, so both configurations work seamlessly with the distributed training system.
+The worker code automatically detects your hardware, so both configurations work seamlessly with the distributed training system.
 
 ## Switching Configurations
 

@@ -154,10 +154,10 @@ def test_worker_initialization():
     assert worker.device is not None
     assert worker.batch_size > 0
 
-def test_cpu_batch_size_adjustment():
-    # Test CPU auto-detection
-    worker = Worker('test_config_cpu.yaml')
-    assert worker.batch_size <= 8
+def test_worker_processes_work_unit():
+    # Test work unit processing
+    worker = Worker('test_config.yaml')
+    # Mock work unit test here
 ```
 
 ### Run full test suite

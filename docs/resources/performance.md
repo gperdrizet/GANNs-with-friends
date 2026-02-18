@@ -25,10 +25,9 @@ watch -n 1 nvidia-smi
 ```
 
 **CPU workers:**
-System automatically reduces batch size, but you can tune:
 ```yaml
 training:
-  batch_size: 16  # Higher if you have powerful CPU
+  batch_size: 32  # Can use same batch size as GPU
   
 worker:
   num_workers_dataloader: 0  # Avoid overhead on CPU

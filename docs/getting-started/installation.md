@@ -48,9 +48,9 @@ Most paths support both CPU and GPU:
 - **Local training**: Works with either
 
 **GPU training**: Faster, recommended for active participation  
-**CPU training**: Works but slower, automatic batch size adjustment
+**CPU training**: Works but slower
 
-The worker automatically detects your hardware and adjusts batch sizes accordingly.
+The worker automatically detects your hardware. If you encounter out-of-memory errors, reduce `batch_size` in config.yaml.
 
 ## Quick links
 
