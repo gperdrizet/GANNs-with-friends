@@ -1,5 +1,6 @@
 # Configuration for Distributed GAN Training
 
+# ==================== Database (all roles) ====================
 database:
   host: YOUR_DATABASE_HOST
   port: 54321
@@ -7,26 +8,33 @@ database:
   user: YOUR_DATABASE_USER
   password: YOUR_DATABASE_PASSWORD
 
+# ==================== Training ====================
 training:
-  batch_size: 32
-  batches_per_work_unit: 10
-  latent_dim: 100
-  image_size: 64
-  num_workunits_per_update: 3
-  learning_rate: 0.0002
-  beta1: 0.5
-  beta2: 0.999
+  # Model architecture (both coordinator and workers)
+  latent_dim: 100             # Dimension of generator input noise
+  image_size: 64              # Image size (64x64)
+  
+  # Coordinator only
+  images_per_work_unit: 320   # Images per work unit assignment
+  num_workunits_per_update: 3 # Work units to collect before model update
+  learning_rate: 0.0002       # Adam optimizer learning rate
+  beta1: 0.5                  # Adam beta1
+  beta2: 0.999                # Adam beta2
 
+# ==================== Worker settings ====================
 worker:
   name:                   # Optional: Your name or identifier (shown in dashboard)
+  batch_size: 32          # Images per batch (adjust based on your GPU memory)
   poll_interval: 5        # seconds between work unit polls
   heartbeat_interval: 30  # seconds between heartbeat updates
   work_unit_timeout: 300  # seconds before work unit times out
 
+# ==================== Data (all roles) ====================
 data:
   dataset_path: data/celeba_torchvision/celeba/img_align_celeba  # Downloaded automatically if not present
   num_workers_dataloader: 4  # Number of dataloader workers
 
+# ==================== Hugging Face (coordinator only) ====================
 huggingface:
   # Default repo allows downloading pre-trained models and dataset (no token needed)
   # To run your own training as coordinator:

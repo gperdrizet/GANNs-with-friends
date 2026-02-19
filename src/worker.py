@@ -49,8 +49,8 @@ class Worker:
         # Setup device
         self.device = get_device(gpu_id)
         
-        # Get batch size from config
-        self.batch_size = self.config['training']['batch_size']
+        # Get batch size from worker config (allows hardware-specific tuning)
+        self.batch_size = self.config['worker'].get('batch_size', 32)
         
         # Ensure dataset is available (download from HF if needed)
         ensure_dataset_available(self.config)
@@ -101,6 +101,7 @@ class Worker:
         print(f'Worker {self.worker_id} initialized successfully!')
         print(f'Name: {self.hostname}')
         print(f'GPU: {self.gpu_name}')
+        print(f'Batch size: {self.batch_size}')
         if system_info['cpu_cores']:
             print(f'CPU cores: {system_info["cpu_cores"]}')
         if system_info['ram_gb']:

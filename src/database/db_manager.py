@@ -247,7 +247,6 @@ class DatabaseManager:
         self, 
         iteration: int, 
         image_indices_list: List[List[int]],
-        num_batches_per_unit: int,
         timeout_seconds: int = 300
     ) -> List[int]:
         """Create multiple work units.
@@ -255,7 +254,6 @@ class DatabaseManager:
         Args:
             iteration: Training iteration
             image_indices_list: List of lists of image indices
-            num_batches_per_unit: Number of batches in each work unit
             timeout_seconds: Timeout in seconds
             
         Returns:
@@ -266,11 +264,13 @@ class DatabaseManager:
         with self.get_session() as session:
             for image_indices in image_indices_list:
                 timeout_at = datetime.utcnow() + timedelta(seconds=timeout_seconds)
+                # num_batches is estimated (workers choose their own batch size)
+                num_batches = max(1, len(image_indices) // 32)
                 work_unit = WorkUnit(
                     iteration=iteration,
                     image_indices=image_indices,
                     status='pending',
-                    num_batches=num_batches_per_unit,
+                    num_batches=num_batches,
                     timeout_at=timeout_at
                 )
                 session.add(work_unit)

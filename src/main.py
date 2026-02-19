@@ -90,13 +90,9 @@ class MainCoordinator:
         self.criterion = nn.BCEWithLogitsLoss()
         
         # Training config
-        self.batch_size = self.config['training']['batch_size']
-        self.batches_per_work_unit = self.config['training']['batches_per_work_unit']
+        self.images_per_work_unit = self.config['training']['images_per_work_unit']
         self.min_workunits_per_update = self.config['training']['num_workunits_per_update']
         self.latent_dim = self.config['training']['latent_dim']
-        
-        # Calculate work units
-        self.images_per_work_unit = self.batch_size * self.batches_per_work_unit
         
         # Fixed noise for generating samples
         self.fixed_noise = torch.randn(64, self.latent_dim, 1, 1, device=self.device)
@@ -155,15 +151,13 @@ class MainCoordinator:
         # Split dataset into work units
         work_units_indices = get_dataset_indices(
             self.dataset_size,
-            self.batch_size,
-            self.batches_per_work_unit
+            self.images_per_work_unit
         )
         
         # Create work units in database
         work_unit_ids = self.db.create_work_units(
             iteration=iteration,
             image_indices_list=work_units_indices,
-            num_batches_per_unit=self.batches_per_work_unit,
             timeout_seconds=self.config['worker']['work_unit_timeout']
         )
         
@@ -382,15 +376,12 @@ class MainCoordinator:
         self.initialize_training()
         
         # Calculate total iterations per epoch
-        images_per_work_unit = self.batch_size * self.batches_per_work_unit
-        work_units_per_epoch = self.dataset_size // images_per_work_unit
+        work_units_per_epoch = self.dataset_size // self.images_per_work_unit
         
         print(f'\nTraining configuration:')
         print(f'  Epochs: {num_epochs}')
         print(f'  Dataset size: {self.dataset_size}')
-        print(f'  Batch size: {self.batch_size}')
-        print(f'  Batches per work unit: {self.batches_per_work_unit}')
-        print(f'  Images per work unit: {images_per_work_unit}')
+        print(f'  Images per work unit: {self.images_per_work_unit}')
         print(f'  Work units per epoch: {work_units_per_epoch}')
         print(f'  Min work units per update: {self.min_workunits_per_update}')
         

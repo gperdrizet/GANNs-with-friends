@@ -89,8 +89,8 @@ def main():
         # Use st.empty for auto-refresh countdown
         import time
         
-    # Get training state
-    training_state = db.get_training_state()
+    # Get training state (handle empty database)
+    training_state = db.get_training_state() or {}
     
     # ==================== Training Stats ====================
     st.markdown("---")
@@ -99,17 +99,22 @@ def main():
     col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
-        status = "Active" if training_state.get('training_active') else "Stopped"
+        if not training_state:
+            status = "Not started"
+        elif training_state.get('training_active'):
+            status = "Active"
+        else:
+            status = "Stopped"
         st.metric("Status", status)
     
     with col2:
-        st.metric("Iteration", training_state.get('current_iteration', 0))
+        st.metric("Iteration", training_state.get('current_iteration') or 0)
     
     with col3:
-        st.metric("Epoch", training_state.get('current_epoch', 0) + 1)
+        st.metric("Epoch", (training_state.get('current_epoch') or 0) + 1)
     
     with col4:
-        total_images = training_state.get('total_images_processed', 0)
+        total_images = training_state.get('total_images_processed') or 0
         st.metric("Images processed", f"{total_images:,}")
     
     with col5:

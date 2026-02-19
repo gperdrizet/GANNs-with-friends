@@ -185,18 +185,16 @@ def create_dataloader(
     )
 
 
-def get_dataset_indices(dataset_size: int, batch_size: int, batches_per_work_unit: int) -> List[List[int]]:
+def get_dataset_indices(dataset_size: int, images_per_work_unit: int) -> List[List[int]]:
     """Split dataset indices into work units.
     
     Args:
         dataset_size: Total number of images in dataset
-        batch_size: Batch size
-        batches_per_work_unit: Number of batches per work unit
+        images_per_work_unit: Number of images per work unit
         
     Returns:
         List of lists, where each inner list contains indices for one work unit
     """
-    images_per_work_unit = batch_size * batches_per_work_unit
     all_indices = list(range(dataset_size))
     
     work_units = []
@@ -235,7 +233,7 @@ if __name__ == '__main__':
         print(f'Batch shape: {images.shape}')
         
         # Test work unit splitting
-        work_units = get_dataset_indices(len(dataset), batch_size=32, batches_per_work_unit=10)
+        work_units = get_dataset_indices(len(dataset), images_per_work_unit=320)
         print(f'Number of work units: {len(work_units)}')
         print(f'Images per work unit: {len(work_units[0])}')
         
