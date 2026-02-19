@@ -33,6 +33,10 @@ data/outputs_local/
 *.swo
 *~
 
+# Virtual environments
+venv
+.venv
+
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints
