@@ -16,7 +16,7 @@ from sqlalchemy.pool import NullPool
 
 from .schema import (
     Base, ModelWeights, OptimizerState, Gradients, 
-    WorkUnit, TrainingState, Worker
+    WorkUnit, TrainingState, Worker, LossHistory
 )
 
 
@@ -483,3 +483,104 @@ class DatabaseManager:
             session.query(Worker).filter(
                 Worker.last_heartbeat < cutoff_time
             ).update({'status': 'offline'})
+    
+    # ==================== Loss History ====================
+    
+    def save_loss_history(
+        self,
+        iteration: int,
+        epoch: int,
+        g_loss: float,
+        d_loss: float,
+        d_real_acc: float = None,
+        d_fake_acc: float = None,
+        num_workers: int = None
+    ):
+        """Save loss values for an iteration.
+        
+        Args:
+            iteration: Training iteration
+            epoch: Current epoch
+            g_loss: Generator loss
+            d_loss: Discriminator loss
+            d_real_acc: Discriminator accuracy on real images
+            d_fake_acc: Discriminator accuracy on fake images
+            num_workers: Number of workers that contributed gradients
+        """
+        with self.get_session() as session:
+            # Update if exists, otherwise insert
+            existing = session.query(LossHistory).filter(
+                LossHistory.iteration == iteration
+            ).first()
+            
+            if existing:
+                existing.epoch = epoch
+                existing.g_loss = g_loss
+                existing.d_loss = d_loss
+                existing.d_real_acc = d_real_acc
+                existing.d_fake_acc = d_fake_acc
+                existing.num_workers = num_workers
+            else:
+                entry = LossHistory(
+                    iteration=iteration,
+                    epoch=epoch,
+                    g_loss=g_loss,
+                    d_loss=d_loss,
+                    d_real_acc=d_real_acc,
+                    d_fake_acc=d_fake_acc,
+                    num_workers=num_workers
+                )
+                session.add(entry)
+    
+    def get_loss_history(self, limit: int = None) -> List[Dict[str, Any]]:
+        """Get loss history for learning curves.
+        
+        Args:
+            limit: Maximum number of entries to return (most recent)
+            
+        Returns:
+            List of dictionaries with loss values, ordered by iteration
+        """
+        with self.get_session() as session:
+            query = session.query(LossHistory).order_by(LossHistory.iteration)
+            
+            if limit:
+                query = query.order_by(LossHistory.iteration.desc()).limit(limit)
+                results = query.all()
+                results.reverse()  # Back to ascending order
+            else:
+                results = query.all()
+            
+            return [{
+                'iteration': h.iteration,
+                'epoch': h.epoch,
+                'g_loss': h.g_loss,
+                'd_loss': h.d_loss,
+                'd_real_acc': h.d_real_acc,
+                'd_fake_acc': h.d_fake_acc,
+                'num_workers': h.num_workers,
+                'created_at': h.created_at
+            } for h in results]
+    
+    def get_all_workers(self) -> List[Dict[str, Any]]:
+        """Get all workers (for dashboard).
+        
+        Returns:
+            List of dictionaries with worker info
+        """
+        with self.get_session() as session:
+            workers = session.query(Worker).order_by(
+                Worker.total_work_units.desc()
+            ).all()
+            
+            return [{
+                'worker_id': w.worker_id,
+                'hostname': w.hostname,
+                'gpu_name': w.gpu_name,
+                'status': w.status,
+                'total_work_units': w.total_work_units,
+                'total_batches': w.total_batches,
+                'total_images': w.total_images,
+                'last_heartbeat': w.last_heartbeat,
+                'created_at': w.created_at
+            } for w in workers]

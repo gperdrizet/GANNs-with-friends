@@ -16,3 +16,5 @@ dependencies:
   - pip:
     - psycopg2-binary>=2.9.0
     - huggingface-hub>=0.20.0
+    - streamlit>=1.30.0
+    - pandas>=2.0.0

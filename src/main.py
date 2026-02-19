@@ -9,7 +9,9 @@ from pathlib import Path
 from datetime import datetime
 
 import torch
+import torch.nn as nn
 import torch.optim as optim
+from torch.utils.data import DataLoader
 from sqlalchemy.exc import OperationalError
 
 from models.dcgan import Generator, Discriminator
@@ -49,14 +51,23 @@ class MainCoordinator:
         # Ensure dataset is available (download from HF if needed)
         ensure_dataset_available(self.config)
         
-        # Load dataset to get size
-        dataset = CelebADataset(
+        # Load dataset to get size and for evaluation
+        self.dataset = CelebADataset(
             root_dir=self.config['data']['dataset_path'],
             image_size=self.config['training']['image_size']
         )
 
-        self.dataset_size = len(dataset)
+        self.dataset_size = len(self.dataset)
         print(f'Dataset size: {self.dataset_size}')
+        
+        # Create a small dataloader for evaluation
+        self.eval_loader = DataLoader(
+            self.dataset,
+            batch_size=64,
+            shuffle=True,
+            num_workers=0,  # Keep it simple for eval
+            drop_last=True
+        )
         
         # Initialize models
         print('Initializing models...')
@@ -74,6 +85,9 @@ class MainCoordinator:
         
         self.optimizer_g = optim.Adam(self.generator.parameters(), lr=lr, betas=(beta1, beta2))
         self.optimizer_d = optim.Adam(self.discriminator.parameters(), lr=lr, betas=(beta1, beta2))
+        
+        # Loss function for evaluation
+        self.criterion = nn.BCEWithLogitsLoss()
         
         # Training config
         self.batch_size = self.config['training']['batch_size']
@@ -284,6 +298,55 @@ class MainCoordinator:
         
         return output_path
     
+    def evaluate_models(self) -> dict:
+        """Compute evaluation metrics on a batch of real/fake images.
+        
+        Returns:
+            Dictionary with g_loss, d_loss, d_real_acc, d_fake_acc
+        """
+        self.generator.eval()
+        self.discriminator.eval()
+        
+        # Get a batch of real images
+        real_images, _ = next(iter(self.eval_loader))
+        real_images = real_images.to(self.device)
+        batch_size = real_images.size(0)
+        
+        with torch.no_grad():
+            # Labels
+            real_labels = torch.ones(batch_size, 1, 1, 1, device=self.device)
+            fake_labels = torch.zeros(batch_size, 1, 1, 1, device=self.device)
+            
+            # Discriminator on real images
+            output_real = self.discriminator(real_images)
+            d_loss_real = self.criterion(output_real, real_labels)
+            d_real_acc = (output_real > 0).float().mean().item()
+            
+            # Generate fake images
+            noise = torch.randn(batch_size, self.latent_dim, 1, 1, device=self.device)
+            fake_images = self.generator(noise)
+            
+            # Discriminator on fake images
+            output_fake = self.discriminator(fake_images)
+            d_loss_fake = self.criterion(output_fake, fake_labels)
+            d_fake_acc = (output_fake <= 0).float().mean().item()
+            
+            # Total discriminator loss
+            d_loss = (d_loss_real + d_loss_fake).item()
+            
+            # Generator loss (how well it fools discriminator)
+            g_loss = self.criterion(output_fake, real_labels).item()
+        
+        self.generator.train()
+        self.discriminator.train()
+        
+        return {
+            'g_loss': g_loss,
+            'd_loss': d_loss,
+            'd_real_acc': d_real_acc,
+            'd_fake_acc': d_fake_acc
+        }
+    
     def push_to_hub(self, iteration: int, epoch: int, samples_path: str = None):
         """Push model to Hugging Face Hub if enabled.
         
@@ -350,10 +413,29 @@ class MainCoordinator:
                 # Aggregate gradients and update models
                 self.aggregate_and_update(iteration)
                 
+                # Evaluate models and save loss history
+                metrics = self.evaluate_models()
+                num_workers = len(self.db.get_active_workers())
+                self.db.save_loss_history(
+                    iteration=iteration,
+                    epoch=epoch,
+                    g_loss=metrics['g_loss'],
+                    d_loss=metrics['d_loss'],
+                    d_real_acc=metrics['d_real_acc'],
+                    d_fake_acc=metrics['d_fake_acc'],
+                    num_workers=num_workers
+                )
+                print(f"Losses - G: {metrics['g_loss']:.4f}, D: {metrics['d_loss']:.4f} | "
+                      f"D accuracy - Real: {metrics['d_real_acc']:.1%}, Fake: {metrics['d_fake_acc']:.1%}")
+                
                 # Update training state
                 self.db.update_training_state(
                     current_iteration=iteration + 1,
-                    current_epoch=epoch
+                    current_epoch=epoch,
+                    g_loss=metrics['g_loss'],
+                    d_loss=metrics['d_loss'],
+                    d_real_acc=metrics['d_real_acc'],
+                    d_fake_acc=metrics['d_fake_acc']
                 )
                 
                 # Generate sample images periodically

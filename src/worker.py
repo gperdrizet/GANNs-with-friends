@@ -32,7 +32,7 @@ class Worker:
             config_path: Path to configuration file
             gpu_id: GPU device ID to use (default: 0)
         """
-        print('Initializing worker...')
+        print('\nInitializing worker...')
         
         # Load configuration
         self.config = load_config(config_path)

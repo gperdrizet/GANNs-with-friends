@@ -1,0 +1,12 @@
+[browser]
+# Disable auto-opening browser on streamlit run
+serverAddress = "localhost"
+gatherUsageStats = false
+
+[server]
+# Don't open browser automatically
+headless = true
+
+[client]
+# Disable the email prompt on first run
+showErrorDetails = true

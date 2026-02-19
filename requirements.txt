@@ -22,3 +22,7 @@ huggingface-hub>=0.20.0
 
 # Monitoring (optional)
 tensorboard>=2.13.0
+
+# Dashboard
+streamlit>=1.30.0
+pandas>=2.0.0

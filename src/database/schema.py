@@ -98,6 +98,24 @@ class TrainingState(Base):
         return f'<TrainingState(iter={self.current_iteration}, epoch={self.current_epoch})>'
 
 
+class LossHistory(Base):
+    """Stores loss values at each iteration for learning curves."""
+    __tablename__ = 'loss_history'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    iteration = Column(Integer, nullable=False, index=True, unique=True)
+    epoch = Column(Integer, nullable=False)
+    g_loss = Column(Float, nullable=False)
+    d_loss = Column(Float, nullable=False)
+    d_real_acc = Column(Float, nullable=True)
+    d_fake_acc = Column(Float, nullable=True)
+    num_workers = Column(Integer, nullable=True)  # Workers that contributed
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<LossHistory(iter={self.iteration}, g_loss={self.g_loss:.4f}, d_loss={self.d_loss:.4f})>'
+
+
 class Worker(Base):
     """Stores information about each worker."""
     __tablename__ = 'workers'
