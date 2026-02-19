@@ -4,7 +4,6 @@ Handles all database operations and connections.
 """
 
 import io
-import pickle
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from contextlib import contextmanager
@@ -71,7 +70,9 @@ class DatabaseManager:
             iteration: Current training iteration
             state_dict: PyTorch model state_dict
         """
-        weights_blob = pickle.dumps(state_dict)
+        buffer = io.BytesIO()
+        torch.save(state_dict, buffer)
+        weights_blob = buffer.getvalue()
         
         with self.get_session() as session:
             weights = ModelWeights(
@@ -96,7 +97,7 @@ class DatabaseManager:
             ).order_by(ModelWeights.iteration.desc()).first()
             
             if weights:
-                return pickle.loads(weights.weights_blob)
+                return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
             return None
     
     def get_model_weights_at_iteration(self, model_type: str, iteration: int) -> Optional[Dict[str, torch.Tensor]]:
@@ -118,7 +119,7 @@ class DatabaseManager:
             ).first()
             
             if weights:
-                return pickle.loads(weights.weights_blob)
+                return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
             return None
     
     # ==================== Optimizer State ====================
@@ -131,7 +132,9 @@ class DatabaseManager:
             iteration: Current training iteration
             state_dict: PyTorch optimizer state_dict
         """
-        state_blob = pickle.dumps(state_dict)
+        buffer = io.BytesIO()
+        torch.save(state_dict, buffer)
+        state_blob = buffer.getvalue()
         
         with self.get_session() as session:
             optimizer_state = OptimizerState(
@@ -156,7 +159,7 @@ class DatabaseManager:
             ).order_by(OptimizerState.iteration.desc()).first()
             
             if state:
-                return pickle.loads(state.state_blob)
+                return torch.load(io.BytesIO(state.state_blob), map_location='cpu')
             return None
     
     # ==================== Gradients ====================
@@ -180,7 +183,9 @@ class DatabaseManager:
             gradients: Dictionary of parameter gradients
             num_samples: Number of samples used to compute gradients
         """
-        gradients_blob = pickle.dumps(gradients)
+        buffer = io.BytesIO()
+        torch.save(gradients, buffer)
+        gradients_blob = buffer.getvalue()
         
         with self.get_session() as session:
             grad = Gradients(
@@ -224,7 +229,7 @@ class DatabaseManager:
             
             return [{
                 'worker_id': g.worker_id,
-                'gradients': pickle.loads(g.gradients_blob),
+                'gradients': torch.load(io.BytesIO(g.gradients_blob), map_location='cpu'),
                 'num_samples': g.num_samples,
                 'work_unit_id': g.work_unit_id
             } for g in results]
@@ -408,8 +413,25 @@ class DatabaseManager:
     
     # ==================== Workers ====================
     
-    def register_worker(self, worker_id: str, hostname: str = None, gpu_name: str = None):
-        """Register a new worker or update existing one."""
+    def register_worker(
+        self, 
+        worker_id: str, 
+        hostname: str = None, 
+        gpu_name: str = None,
+        cpu_cores: int = None,
+        ram_gb: float = None,
+        gpu_vram_gb: float = None
+    ):
+        """Register a new worker or update existing one.
+        
+        Args:
+            worker_id: Unique worker identifier
+            hostname: Worker hostname or display name
+            gpu_name: GPU name (e.g., 'NVIDIA RTX 3080')
+            cpu_cores: Number of CPU cores
+            ram_gb: System RAM in GB
+            gpu_vram_gb: GPU VRAM in GB (None for CPU workers)
+        """
         with self.get_session() as session:
             worker = session.query(Worker).filter(Worker.worker_id == worker_id).first()
             
@@ -421,12 +443,21 @@ class DatabaseManager:
                     worker.hostname = hostname
                 if gpu_name:
                     worker.gpu_name = gpu_name
+                if cpu_cores is not None:
+                    worker.cpu_cores = cpu_cores
+                if ram_gb is not None:
+                    worker.ram_gb = ram_gb
+                if gpu_vram_gb is not None:
+                    worker.gpu_vram_gb = gpu_vram_gb
             else:
                 # Create new worker
                 worker = Worker(
                     worker_id=worker_id,
                     hostname=hostname,
                     gpu_name=gpu_name,
+                    cpu_cores=cpu_cores,
+                    ram_gb=ram_gb,
+                    gpu_vram_gb=gpu_vram_gb,
                     status='active'
                 )
                 session.add(worker)
@@ -577,6 +608,9 @@ class DatabaseManager:
                 'worker_id': w.worker_id,
                 'hostname': w.hostname,
                 'gpu_name': w.gpu_name,
+                'cpu_cores': w.cpu_cores,
+                'ram_gb': w.ram_gb,
+                'gpu_vram_gb': w.gpu_vram_gb,
                 'status': w.status,
                 'total_work_units': w.total_work_units,
                 'total_batches': w.total_batches,

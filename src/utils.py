@@ -99,6 +99,151 @@ def generate_worker_id() -> str:
     return f'{get_hostname()}_{uuid.uuid4().hex[:8]}'
 
 
+def get_cpu_cores() -> int:
+    """Get number of CPU cores.
+    
+    Returns:
+        Number of CPU cores
+    """
+    return os.cpu_count() or 1
+
+
+def get_ram_gb() -> float:
+    """Get system RAM in GB. Works on Linux, Windows, and macOS.
+    
+    Returns:
+        System RAM in GB, or 0.0 if unable to determine
+    """
+    # Try psutil first (cross-platform, most reliable)
+    try:
+        import psutil
+        return psutil.virtual_memory().total / (1024 ** 3)
+    except ImportError:
+        pass
+    
+    # Platform-specific fallbacks
+    import platform
+    system = platform.system()
+    
+    # Linux: read from /proc/meminfo
+    if system == 'Linux':
+        try:
+            with open('/proc/meminfo', 'r') as f:
+                for line in f:
+                    if line.startswith('MemTotal:'):
+                        kb = int(line.split()[1])
+                        return kb / (1024 ** 2)
+        except Exception:
+            pass
+    
+    # macOS: use sysctl
+    elif system == 'Darwin':
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['sysctl', '-n', 'hw.memsize'],
+                capture_output=True, text=True, timeout=5
+            )
+            if result.returncode == 0:
+                return int(result.stdout.strip()) / (1024 ** 3)
+        except Exception:
+            pass
+    
+    # Windows: use ctypes to call GlobalMemoryStatusEx
+    elif system == 'Windows':
+        try:
+            import ctypes
+            
+            class MEMORYSTATUSEX(ctypes.Structure):
+                _fields_ = [
+                    ('dwLength', ctypes.c_ulong),
+                    ('dwMemoryLoad', ctypes.c_ulong),
+                    ('ullTotalPhys', ctypes.c_ulonglong),
+                    ('ullAvailPhys', ctypes.c_ulonglong),
+                    ('ullTotalPageFile', ctypes.c_ulonglong),
+                    ('ullAvailPageFile', ctypes.c_ulonglong),
+                    ('ullTotalVirtual', ctypes.c_ulonglong),
+                    ('ullAvailVirtual', ctypes.c_ulonglong),
+                    ('ullAvailExtendedVirtual', ctypes.c_ulonglong),
+                ]
+            
+            stat = MEMORYSTATUSEX()
+            stat.dwLength = ctypes.sizeof(stat)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(stat)):
+                return stat.ullTotalPhys / (1024 ** 3)
+        except Exception:
+            pass
+    
+    return 0.0
+
+
+def get_gpu_vram_gb(gpu_id: int = 0) -> float:
+    """Get GPU VRAM in GB.
+    
+    Args:
+        gpu_id: GPU device ID to query (default: 0)
+    
+    Returns:
+        GPU VRAM in GB, or 0.0 if no GPU or error
+    """
+    try:
+        if torch.cuda.is_available():
+            if gpu_id < torch.cuda.device_count():
+                props = torch.cuda.get_device_properties(gpu_id)
+                return props.total_memory / (1024 ** 3)
+            elif torch.cuda.device_count() > 0:
+                props = torch.cuda.get_device_properties(0)
+                return props.total_memory / (1024 ** 3)
+    except Exception:
+        pass
+    return 0.0
+
+
+def get_system_info(gpu_id: int = 0) -> Dict[str, Any]:
+    """Get all system information for worker registration.
+    
+    Collects CPU cores, RAM, and GPU VRAM with graceful error handling.
+    If any value cannot be determined, it will be None.
+    
+    Args:
+        gpu_id: GPU device ID to query (default: 0)
+    
+    Returns:
+        Dictionary with cpu_cores, ram_gb, gpu_vram_gb (values may be None)
+    """
+    result = {
+        'cpu_cores': None,
+        'ram_gb': None,
+        'gpu_vram_gb': None
+    }
+    
+    # Get CPU cores
+    try:
+        cores = get_cpu_cores()
+        if cores and cores > 0:
+            result['cpu_cores'] = cores
+    except Exception as e:
+        print(f'Warning: Could not get CPU core count: {e}')
+    
+    # Get RAM
+    try:
+        ram = get_ram_gb()
+        if ram and ram > 0:
+            result['ram_gb'] = round(ram, 1)
+    except Exception as e:
+        print(f'Warning: Could not get RAM size: {e}')
+    
+    # Get GPU VRAM (None for CPU-only workers)
+    try:
+        vram = get_gpu_vram_gb(gpu_id)
+        if vram and vram > 0:
+            result['gpu_vram_gb'] = round(vram, 1)
+    except Exception as e:
+        print(f'Warning: Could not get GPU VRAM: {e}')
+    
+    return result
+
+
 def ensure_dataset_available(config: Dict[str, Any]) -> bool:
     """Ensure CelebA dataset is available locally, downloading from HF if needed.
     

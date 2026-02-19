@@ -48,6 +48,18 @@ nano config.yaml  # or use any text editor
 python src/worker.py
 ```
 
+### 4. Set your name (optional)
+
+Add your name to `config.yaml` so you appear on the dashboard leaderboard:
+
+```yaml
+worker:
+  name: Alice  # Your name here!
+  poll_interval: 5
+```
+
+This makes it easy to track your contributions and compete with classmates!
+
 ## What the worker does
 
 ### Automatic workflow
@@ -69,6 +81,7 @@ You just start it and let it run!
 Initializing worker...
 Dataset found locally (202,599 images)
 Worker abc123 initialized successfully!
+Name: Alice
 GPU: NVIDIA GeForce RTX 3080
 Polling for work...
 
@@ -90,11 +103,13 @@ Processing work unit 43 (iteration 5)...
 
 ```
 Worker abc123 initialized successfully!
+Name: Alice
 GPU: NVIDIA GeForce RTX 3080
 Dataset found locally (202,599 images)
 ```
 
 - **Worker ID**: Unique identifier for your worker
+- **Name**: Your name (from config, or hostname if not set)
 - **GPU**: Your hardware (or "CPU" if no GPU)
 - **Dataset**: Shows if found locally or downloaded
 
@@ -141,9 +156,11 @@ WHERE worker_id = 'YOUR_WORKER_ID';
 ### Leaderboard (if available)
 
 Your instructor may set up a dashboard showing:
-- Top contributors
+- Top contributors by name
 - Total work units processed
 - Active workers
+
+Run it yourself with `streamlit run src/dashboard.py`
 
 ## Best practices
 

@@ -124,6 +124,9 @@ class Worker(Base):
     worker_id = Column(String(100), unique=True, nullable=False, index=True)
     hostname = Column(String(255), nullable=True)
     gpu_name = Column(String(255), nullable=True)
+    cpu_cores = Column(Integer, nullable=True)  # Number of CPU cores
+    ram_gb = Column(Float, nullable=True)  # System RAM in GB
+    gpu_vram_gb = Column(Float, nullable=True)  # GPU VRAM in GB (None for CPU workers)
     status = Column(String(20), nullable=False, default='active')  # 'active', 'idle', 'offline'
     total_work_units = Column(Integer, nullable=False, default=0)
     total_batches = Column(Integer, nullable=False, default=0)

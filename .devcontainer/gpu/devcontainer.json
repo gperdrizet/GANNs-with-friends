@@ -16,6 +16,7 @@
 		"--network=bridge"            // Explicitly use bridge network for internet access
 	],
 	"remoteUser": "vscode",           // Use the 'vscode' user provided by the base image
+	"forwardPorts": [8501],            // Streamlit dashboard port
 	"containerEnv": {
 		"TF_CPP_MIN_LOG_LEVEL": "1"   // Suppress TensorFlow INFO logs for cleaner output
   	},
