@@ -151,8 +151,23 @@ def ensure_dataset_available(config: Dict[str, Any]) -> bool:
         )
         
         print('Extracting dataset...')
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(dataset_path.parent)
+        
+        # Try system unzip first (much faster than Python's zipfile)
+        import subprocess
+        try:
+            result = subprocess.run(
+                ['unzip', '-q', '-o', zip_path, '-d', str(dataset_path.parent)],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode != 0:
+                raise subprocess.CalledProcessError(result.returncode, 'unzip')
+            print('Extraction complete (used system unzip)')
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # Fallback to Python zipfile (slower but always available)
+            print('Using Python extraction (this may take a while)...')
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(dataset_path.parent)
         
         # Verify extraction
         image_count = len(list(dataset_path.glob('*.jpg')))
