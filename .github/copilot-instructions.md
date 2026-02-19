@@ -1,12 +1,12 @@
-# Copilot Instructions for GANNs with Friends
+# Copilot instructions for GANNs with Friends
 
-## Project Overview
+## Project overview
 
 This is an **educational distributed deep learning system** where students participate as workers in a compute cluster to train a GAN (Generative Adversarial Network) to generate celebrity faces. The system uses PostgreSQL as a coordination hub instead of complex networking, making it accessible for classroom environments.
 
 **Key principle:** This is an educational project. Code should be readable, well-documented, and designed for learning, not just performance.
 
-## Development Philosophy
+## Development philosophy
 
 This project uses **function-level meta-coding** (AI-assisted development):
 - Human provides architectural decisions, design choices, and testing
@@ -14,9 +14,9 @@ This project uses **function-level meta-coding** (AI-assisted development):
 - Quality and maintainability take precedence over speed
 - All architectural decisions should be intentional and documented
 
-## Code Style and Conventions
+## Code style and conventions
 
-### Python Code
+### Python code
 
 - **Type hints**: Use type hints for all function parameters and return values
 - **Docstrings**: Use Google-style docstrings for all functions, classes, and modules
@@ -59,9 +59,9 @@ def process_gradients(self, iteration: int, gradients: List[torch.Tensor]) -> bo
 - **Documentation**: Every config option should be documented in `docs/guides/configuration.md`
 - **Validation**: Validate configuration at startup with clear error messages
 
-## Architecture Patterns
+## Architecture patterns
 
-### Database as Coordinator
+### Database as coordinator
 
 The PostgreSQL database is the central coordination mechanism:
 - No direct worker-to-coordinator communication
@@ -69,7 +69,7 @@ The PostgreSQL database is the central coordination mechanism:
 - All state stored in database tables
 - Use atomic operations for work unit claims
 
-### Fault Tolerance
+### Fault tolerance
 
 Design for resilience:
 - Workers can disconnect/reconnect at any time
@@ -77,7 +77,7 @@ Design for resilience:
 - Stale work gets cancelled when iterations advance
 - Heartbeat system tracks active workers
 
-### Work Unit Pattern
+### Work unit pattern
 
 ```python
 # Workers claim work atomically
@@ -93,9 +93,9 @@ if db.count_completed_work_units(iteration) >= threshold:
     db.cancel_pending_work_units(iteration)  # Cancel stale work
 ```
 
-## Key Components
+## Key components
 
-### Database Manager (`src/database/db_manager.py`)
+### Database manager (`src/database/db_manager.py`)
 - All database operations go through DatabaseManager
 - Use context managers for session handling
 - Separate methods for each operation type
@@ -106,7 +106,7 @@ if db.count_completed_work_units(iteration) >= threshold:
 - Include initialization functions (e.g., `weights_init`)
 - Keep model architecture simple and documented
 
-### Main Coordinator (`src/main.py`)
+### Main coordinator (`src/main.py`)
 - Clear separation of concerns
 - Progress tracking and logging
 - Configuration validation
@@ -118,9 +118,9 @@ if db.count_completed_work_units(iteration) >= threshold:
 - Graceful shutdown on keyboard interrupt
 - Clear status messages
 
-## Common Patterns
+## Common patterns
 
-### Error Handling
+### Error handling
 ```python
 try:
     # Operation
@@ -130,7 +130,7 @@ except SpecificError as e:
     # Handle or re-raise
 ```
 
-### Configuration Access
+### Configuration access
 ```python
 # Load from config
 config = yaml.safe_load(open('config.yaml'))
@@ -141,7 +141,7 @@ batch_size = config['training']['batch_size']
 ```python
 # Use print statements for now (no logging framework)
 print(f"Processing iteration {iteration}...")
-print(f"✓ Completed work unit {work_unit_id}")
+print(f"Completed work unit {work_unit_id}")
 ```
 
 ## Testing
@@ -152,7 +152,7 @@ print(f"✓ Completed work unit {work_unit_id}")
 - Test both coordinator and worker modes
 - Check edge cases (worker disconnect, database errors, etc.)
 
-## Documentation Updates
+## Documentation updates
 
 When adding features or making changes:
 1. Update relevant documentation files in `docs/`
@@ -160,7 +160,7 @@ When adding features or making changes:
 3. Ensure all examples in docs reflect current code
 4. Rebuild documentation with `cd docs && make html`
 
-## What to Avoid
+## What to avoid
 
 - **Don't add automated testing infrastructure** - This project intentionally uses manual testing
 - **Don't overcomplicate** - Favor simple, readable solutions over clever optimizations
@@ -168,7 +168,7 @@ When adding features or making changes:
 - **Don't add dependencies** unless necessary - Keep requirements lean
 - **Don't break backward compatibility** in config.yaml without documenting migration
 
-## Educational Focus
+## Educational focus
 
 Always consider: "Would a student understand this code?"
 - Add explanatory comments for complex logic
@@ -177,14 +177,14 @@ Always consider: "Would a student understand this code?"
 - Document the "why" not just the "what"
 - Include examples in docstrings
 
-## Version Control
+## Version control
 
 - **Do not write commit messages** - Human handles all git commits
 - **Do not make commits** - Human reviews changes and commits them
 - **Do not push changes** - Human controls when code is pushed
 - Human is responsible for version control decisions and workflow
 
-## When Helping with Code
+## When helping with code
 
 1. **Understand the context**: Ask for architectural guidance before implementing
 2. **Maintain consistency**: Follow existing patterns in the codebase
@@ -193,7 +193,7 @@ Always consider: "Would a student understand this code?"
 5. **Verify assumptions**: Check that suggested changes align with project goals
 6. **Test manually**: Describe how to test the changes
 
-## Project Priorities (in order)
+## Project priorities (in order)
 
 1. **Educational value** - Students should learn from reading and using this code
 2. **Reliability** - Distributed training should work across diverse hardware

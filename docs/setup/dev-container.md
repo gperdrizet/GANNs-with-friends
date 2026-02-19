@@ -75,7 +75,7 @@ cd GANNs-with-freinds
    - **DeepLearning GPU**: If you have NVIDIA GPU and Docker GPU support
    - **DeepLearning CPU**: If you're on Mac or don't have GPU
 4. Click "Reopen in Container"
-   - Or press `F1` → "Dev Containers: Reopen in Container"
+   - Or press `F1` > "Dev Containers: Reopen in Container"
 5. Wait for container to build (5-10 minutes first time)
 
 **GPU container includes:**
@@ -182,12 +182,12 @@ Pre-installed tools:
 ### Restart container
 
 If you need to restart:
-1. `F1` → "Dev Containers: Rebuild Container"
+1. `F1` > "Dev Containers: Rebuild Container"
 2. Or close and reopen VS Code
 
 ### Access terminal
 
-- View → Terminal
+- View > Terminal
 - Or press `` Ctrl+` ``
 
 ### Install additional packages
@@ -226,7 +226,7 @@ Files in the project directory are shared between host and container. Edit with 
 **Wrong configuration selected:**
 - Close VS Code
 - Reopen folder and choose correct configuration
-- Or manually select: `F1` → "Dev Containers: Reopen in Container" → choose configuration
+- Or manually select: `F1` > "Dev Containers: Reopen in Container" > choose configuration
 - Rebuild container
 
 ## Next steps

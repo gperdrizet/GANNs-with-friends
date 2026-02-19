@@ -22,14 +22,14 @@ Run the project on Google Colab with zero local installation required.
 ### 1. Open the Colab notebook
 
 1. Go to [Google Colab](https://colab.research.google.com/)
-2. Click **File → Open notebook**
+2. Click **File > Open notebook**
 3. Select the **GitHub** tab
 4. Enter: `gperdrizet/GANNs-with-freinds`
 5. Select: `notebooks/run_worker_colab.ipynb`
 
 ### 2. Enable GPU runtime
 
-1. Click **Runtime → Change runtime type**
+1. Click **Runtime > Change runtime type**
 2. Set **Hardware accelerator** to **GPU**
 3. Select **T4** (or best available)
 4. Click **Save**
@@ -128,7 +128,7 @@ Processed 320 images total
 
 To stop gracefully:
 1. Click the **Stop** button in Colab
-2. Or press **Runtime → Interrupt execution**
+2. Or press **Runtime > Interrupt execution**
 
 ## Tips for Colab users
 

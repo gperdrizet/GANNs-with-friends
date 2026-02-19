@@ -157,7 +157,7 @@ ls data/outputs/samples/
 
 ### Discriminator dominates
 
-**Problem**: Discriminator loss → 0, generator loss increases
+**Problem**: Discriminator loss goes to 0, generator loss increases
 
 **Solution**:
 ```yaml

@@ -270,18 +270,18 @@ training:
 ```
 
 **Larger work units (15-20 batches):**
-- ✅ Less database overhead (fewer queries per epoch)
-- ✅ Fewer work units to manage
-- ✅ Better for stable, persistent workers
-- ❌ Longer processing time per work unit
-- ❌ Slower feedback if workers disconnect
+- Less database overhead (fewer queries per epoch)
+- Fewer work units to manage
+- Better for stable, persistent workers
+- Longer processing time per work unit
+- Slower feedback if workers disconnect
 
 **Smaller work units (5-10 batches):**
-- ✅ Faster completion times
-- ✅ Better for unstable workers (less wasted work if disconnected)
-- ✅ More granular progress tracking
-- ❌ More database operations
-- ❌ Higher coordination overhead with many workers
+- Faster completion times
+- Better for unstable workers (less wasted work if disconnected)
+- More granular progress tracking
+- More database operations
+- Higher coordination overhead with many workers
 
 **Recommendation:** Start with 10, increase if you have stable workers or high database latency.
 
@@ -297,20 +297,20 @@ training:
 This is one of the most important parameters for distributed training quality.
 
 **Higher values (8-20+ work units):**
-- ✅ More gradient samples = better quality, less noisy updates
-- ✅ More robust training (similar to larger batch sizes)
-- ✅ Less risk of mode collapse
-- ❌ Slower iterations (wait for more workers to finish)
-- ❌ More wasted work units if not all are used
-- ❌ Can accumulate stale work units
+- More gradient samples = better quality, less noisy updates
+- More robust training (similar to larger batch sizes)
+- Less risk of mode collapse
+- Slower iterations (wait for more workers to finish)
+- More wasted work units if not all are used
+- Can accumulate stale work units
 
 **Lower values (1-3 work units):**
-- ✅ Faster iterations (update as soon as possible)
-- ✅ Less wasted computation
-- ✅ Quick feedback during development/testing
-- ❌ Noisier gradients (more variance in updates)
-- ❌ Higher risk of training instability
-- ❌ May not benefit from parallel workers
+- Faster iterations (update as soon as possible)
+- Less wasted computation
+- Quick feedback during development/testing
+- Noisier gradients (more variance in updates)
+- Higher risk of training instability
+- May not benefit from parallel workers
 
 **The stale work unit problem:**
 

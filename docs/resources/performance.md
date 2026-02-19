@@ -51,16 +51,16 @@ training:
 
 **Trade-offs:**
 - **Larger `batches_per_work_unit`** (15-20):
-  - ✅ Less database overhead
-  - ✅ Fewer work units to manage
-  - ❌ Longer to process each work unit
-  - ❌ Slower feedback if workers disconnect
+  - Less database overhead
+  - Fewer work units to manage
+  - Longer to process each work unit
+  - Slower feedback if workers disconnect
 
 - **Smaller `batches_per_work_unit`** (5-10):
-  - ✅ Faster work unit completion
-  - ✅ Better for unstable workers
-  - ❌ More database operations
-  - ❌ Higher coordination overhead
+  - Faster work unit completion
+  - Better for unstable workers
+  - More database operations
+  - Higher coordination overhead
 
 **For `num_workunits_per_update`:**
 - Set based on your expected number of workers
@@ -83,7 +83,7 @@ worker:
 - Slow network: Set to 10-15 seconds
 - Fast training iterations: Keep at 3-5 seconds
 
-## Monitoring Performance
+## Monitoring performance
 
 ### Check GPU Utilization
 
@@ -108,7 +108,7 @@ If work units take too long to claim or complete:
 - Verify database server isn't overloaded
 - Consider reducing `poll_interval`
 
-## Best Practices
+## Best practices
 
 1. **Start conservative** - Begin with default settings
 2. **Monitor first** - Watch GPU/CPU usage before optimizing
@@ -116,7 +116,7 @@ If work units take too long to claim or complete:
 4. **Match batch size to hardware** - Max out GPU memory without OOM errors
 5. **Tune for your class size** - Set `num_workunits_per_update` based on worker count
 
-## Performance Targets
+## Performance targets
 
 **Good performance indicators:**
 - GPU utilization: >80%
@@ -130,7 +130,7 @@ If work units take too long to claim or complete:
 - Check network connection to database
 - See [Troubleshooting](troubleshooting.md)
 
-## Example Configurations
+## Example configurations
 
 **Note:** Default settings in `config.yaml.template`:
 - `batch_size: 32`
@@ -174,7 +174,7 @@ worker:
   poll_interval: 10
 ```
 
-## Next Steps
+## Next steps
 
 - [Configuration Guide](../guides/configuration.md) - Detailed config options
 - [Troubleshooting](troubleshooting.md) - Fix performance issues

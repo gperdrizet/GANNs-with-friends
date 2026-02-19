@@ -48,7 +48,7 @@ Include in your bug report:
 
 This project uses AI-assisted development with human oversight. For details about the development approach, collaborative workflow, and concrete examples, see the [Development approach](../development-approach.md) section.
 
-## Advanced Performance Optimization Ideas
+## Advanced performance optimization ideas
 
 These are advanced code modifications that could significantly improve system performance. They require deeper understanding of the codebase and are excellent contributions for experienced developers or students learning about distributed systems optimization.
 
