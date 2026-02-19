@@ -262,7 +262,12 @@ def ensure_dataset_available(config: Dict[str, Any]) -> bool:
         RuntimeError: If dataset cannot be found or downloaded
     """
     dataset_path = Path(config['data']['dataset_path'])
-    zip_path = dataset_path.parent / 'img_align_celeba.zip'
+    
+    # HF downloads preserve repo structure: data/img_align_celeba.zip
+    # So zip always ends up at {base}/data/img_align_celeba.zip
+    # where base is dataset_path.parent.parent
+    base_dir = dataset_path.parent.parent
+    zip_path = base_dir / 'data' / 'img_align_celeba.zip'
     
     # Check if extracted dataset already exists locally
     if dataset_path.exists():
@@ -291,14 +296,15 @@ def ensure_dataset_available(config: Dict[str, Any]) -> bool:
         from huggingface_hub import hf_hub_download
         
         # Create parent directories
-        dataset_path.parent.mkdir(parents=True, exist_ok=True)
+        base_dir.mkdir(parents=True, exist_ok=True)
         
         # Download the zip file (will be read directly, no extraction)
+        # HF preserves filename path, so this goes to {base_dir}/data/img_align_celeba.zip
         downloaded_path = hf_hub_download(
             repo_id=repo_id,
             filename='data/img_align_celeba.zip',
             repo_type='model',
-            local_dir=dataset_path.parent.parent
+            local_dir=base_dir
         )
         
         print(f'Download complete: {downloaded_path}')

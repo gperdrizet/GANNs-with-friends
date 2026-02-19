@@ -36,10 +36,22 @@ class CelebADataset(Dataset):
         self.zip_path = None
         
         # Check if we should load from a zip file
-        # Look for zip file in parent directory
-        possible_zip = self.root_dir.parent / 'img_align_celeba.zip'
-        if possible_zip.exists() and not self.root_dir.exists():
-            self._init_from_zip(possible_zip)
+        # Look for zip file in multiple possible locations
+        zip_locations = [
+            # Direct parent (e.g., data/celeba_torchvision/data/img_align_celeba.zip)
+            self.root_dir.parent / 'img_align_celeba.zip',
+            # HF download location: {base}/data/img_align_celeba.zip
+            self.root_dir.parent.parent / 'data' / 'img_align_celeba.zip',
+        ]
+        
+        zip_found = None
+        for possible_zip in zip_locations:
+            if possible_zip.exists():
+                zip_found = possible_zip
+                break
+        
+        if zip_found and not self.root_dir.exists():
+            self._init_from_zip(zip_found)
         elif str(root_dir).endswith('.zip') and Path(root_dir).exists():
             self._init_from_zip(Path(root_dir))
         else:
