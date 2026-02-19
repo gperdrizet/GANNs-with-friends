@@ -23,11 +23,17 @@ worker:
   work_unit_timeout: 300  # seconds before work unit times out
 
 data:
-  dataset_path: ./data/celeba  # Path to CelebA dataset
+  dataset_path: data/celeba_torchvision/celeba/img_align_celeba  # Downloaded automatically if not present
   num_workers_dataloader: 4  # Number of dataloader workers
 
 huggingface:
-  enabled: false  # Set to true to push models to Hugging Face Hub
-  repo_id: YOUR_HF_USERNAME/distributed-gan-celeba  # Your Hugging Face repo
-  token: YOUR_HF_TOKEN  # Get from https://huggingface.co/settings/tokens
+  # Default repo allows downloading pre-trained models and dataset (no token needed)
+  # To run your own training as coordinator:
+  #   1. Create your own repo at huggingface.co/new
+  #   2. Set repo_id to: YOUR_USERNAME/YOUR_REPO_NAME
+  #   3. Add your token from huggingface.co/settings/tokens (needs write access)
+  #   4. Set enabled: true
+  enabled: false
+  repo_id: gperdrizet/GANNs-with-friends  # Default: project repo (read-only for downloads)
+  token: ''  # Only needed if pushing to your own repo
   push_interval: 5  # Push model every N iterations

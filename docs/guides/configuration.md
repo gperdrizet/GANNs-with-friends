@@ -211,42 +211,60 @@ data:
 
 ## Hugging Face configuration
 
-Optional integration for model sharing.
+Integration for dataset downloads and model sharing.
 
 ```yaml
 huggingface:
   enabled: false
-  repo_id: ''
+  repo_id: gperdrizet/GANNs-with-friends
   token: ''
   push_interval: 5
-  private: false
+```
+
+### Default behavior
+
+The default `repo_id` points to the project's public repository. This allows:
+- **Workers/students**: Download the CelebA dataset automatically (no token needed)
+- **Demo mode**: Download pre-trained models for testing
+
+### Running your own training
+
+To run as coordinator with your own team, you need your own Hugging Face repository:
+
+1. Create a new repo at [huggingface.co/new](https://huggingface.co/new)
+2. Get a write token from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+3. Update your config:
+
+```yaml
+huggingface:
+  enabled: true
+  repo_id: YOUR_USERNAME/YOUR_REPO_NAME
+  token: YOUR_WRITE_TOKEN
+  push_interval: 5
 ```
 
 ### Options
 
 **`enabled`** (boolean, default: false)
-- Enable Hugging Face uploads
-- Requires valid token and repo
+- Enable pushing checkpoints to Hugging Face
+- Only needed for coordinators running their own training
+- Workers don't need this enabled
 
-**`repo_id`** (string, default: '')
+**`repo_id`** (string, default: gperdrizet/GANNs-with-friends)
 - Hugging Face repository ID
 - Format: username/repo-name
-- Example: 'instructor/distributed-gan'
+- Default repo works for downloading data/models (read-only)
 
 **`token`** (string, default: '')
 - Hugging Face access token
+- Only needed when `enabled: true`
 - Get from huggingface.co/settings/tokens
-- Needs write permissions
+- Needs write permissions for your repo
 
 **`push_interval`** (integer, default: 5)
 - Push checkpoint every N iterations
 - Lower = more frequent updates, more uploads
 - Typical range: 1-10
-
-**`private`** (boolean, default: false)
-- Make repository private
-- Students need access to view
-- Public repos don't consume quota
 
 ## Understanding distributed training tradeoffs
 

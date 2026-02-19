@@ -78,10 +78,10 @@ training:
   batches_per_work_unit: 10 
   num_workunits_per_update: 3  # Wait for N work units before updating
 
-huggingface:  # Optional but recommended
+huggingface:  # Optional but recommended for your own training runs
   enabled: true
-  repo_id: your-username/distributed-gan-celeba
-  token: your_hf_token
+  repo_id: your-username/your-repo  # Create at huggingface.co/new
+  token: your_hf_write_token        # From huggingface.co/settings/tokens
   push_interval: 5
 ```
 

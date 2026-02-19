@@ -91,14 +91,17 @@ Check generated samples in `data/outputs/samples/`.
 
 ## Optional: Hugging Face integration
 
-Enable automatic model uploads to share progress with students:
+To push checkpoints to your own Hugging Face repository:
+
+1. Create a repo at [huggingface.co/new](https://huggingface.co/new)
+2. Get a write token from [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)
+3. Update config.yaml:
 
 ```yaml
-# In config.yaml
 huggingface:
   enabled: true
-  repo_id: your-username/distributed-gan-celeba
-  token: your_hf_token
+  repo_id: your-username/your-repo-name
+  token: your_hf_write_token
   push_interval: 5
 ```
 
