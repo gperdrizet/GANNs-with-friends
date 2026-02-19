@@ -13,7 +13,7 @@ pyyaml>=6.0
 Pillow>=10.0.0
 
 # Utilities
-numpy>=2.0.0
+numpy>=1.24.0
 tqdm>=4.65.0
 gdown>=4.7.0  # Required by torchvision for CelebA dataset download
 
