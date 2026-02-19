@@ -147,8 +147,7 @@ def ensure_dataset_available(config: Dict[str, Any]) -> bool:
             repo_id=repo_id,
             filename='data/img_align_celeba.zip',
             repo_type='model',
-            local_dir=dataset_path.parent.parent,
-            local_dir_use_symlinks=False
+            local_dir=dataset_path.parent.parent
         )
         
         print('Extracting dataset...')
