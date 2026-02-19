@@ -1,359 +1,181 @@
-# Performance tips
+# Performance Tips
 
-Optimize distributed GAN training for better speed and efficiency.
+Optimize your distributed GAN training setup using built-in configuration options.
 
-## Worker optimization
+## Configuration-Based Optimizations
 
-### Hardware utilization
+These performance improvements work out-of-the-box by adjusting `config.yaml`.
+
+### Batch Size Tuning
 
 **GPU workers:**
 ```yaml
-# Maximize batch size for your GPU
 training:
-  batch_size: 128  # Adjust based on VRAM
-
-# More DataLoader workers
-worker:
-  num_workers_dataloader: 8  # Use available CPU cores
+  batch_size: 128  # Increase for better GPU utilization (watch for OOM)
 ```
 
-Check GPU utilization:
+**Check GPU utilization in a separate terminal:**
 ```bash
 watch -n 1 nvidia-smi
-# GPU usage should be >90%
+# GPU usage should be >80%
 # Memory should be well utilized
 ```
 
 **CPU workers:**
 ```yaml
 training:
-  batch_size: 32  # Can use same batch size as GPU
-  
-worker:
-  num_workers_dataloader: 0  # Avoid overhead on CPU
+  batch_size: 32  # Can match GPU batch size
 ```
 
-### Network optimization
+### DataLoader Workers
 
-**Reduce polling frequency:**
+Adjust parallel data loading:
 ```yaml
-worker:
-  poll_interval: 10  # Check less often when many workers
+data:
+  num_workers_dataloader: 4  # Default: 4, adjust based on CPU cores
 ```
 
-**Local database cache** (for very slow networks):
-```python
-# Cache model weights locally
-# Only download when iteration changes
-if current_iteration != last_iteration:
-    weights = download_weights()
-    last_iteration = current_iteration
-```
+**Guidelines:**
+- GPU: 4-8 workers (4 is a good default, increase if you have cores available)
+- CPU: 0-2 workers (to avoid overhead)
 
-## Coordinator optimization
+### Work Unit Configuration
 
-### Batch work efficiently
+Balance database overhead vs. processing efficiency:
 
 ```yaml
 training:
-  batches_per_work_unit: 15  # Larger units = less overhead
-  num_workers_per_update: 5  # More gradients per update
+  batches_per_work_unit: 10  # Images per work unit = batch_size × this value
+  num_workunits_per_update: 3  # How many work unit gradients before updating
 ```
 
-Trade-off: larger values = better efficiency but slower feedback.
+**Trade-offs:**
+- **Larger `batches_per_work_unit`** (15-20):
+  - Less database overhead
+  - Fewer work units to manage
+  - Longer to process each work unit
+  - Slower feedback if workers disconnect
 
-### Parallel sample generation
+- **Smaller `batches_per_work_unit`** (5-10):
+  - Faster work unit completion
+  - Better for unstable workers
+  - More database operations
+  - Higher coordination overhead
 
-Generate samples in background:
-```python
-import threading
+**For `num_workunits_per_update`:**
+- Set based on your expected number of workers
+- Too low (1-2): Noisy gradients, potential wasted work units
+- Too high (>50% of workers): Slower updates, better gradient quality
+- Sweet spot: ~30-50% of your total workers
 
-def generate_samples_async():
-    threading.Thread(target=generate_and_save_samples).start()
+### Worker Polling
+
+Reduce unnecessary database checks:
+
+```yaml
+worker:
+  poll_interval: 5   # Seconds between work unit checks (increase if many workers)
+  heartbeat_interval: 30  # Seconds between heartbeat updates
 ```
 
-### Database connection pooling
+**When to increase poll_interval:**
+- Many workers (>10): Set to 8-10 seconds
+- Slow network: Set to 10-15 seconds
+- Fast training iterations: Keep at 3-5 seconds
 
-```python
-from psycopg2 import pool
+## Monitoring performance
 
-# Create connection pool
-connection_pool = pool.SimpleConnectionPool(
-    minconn=1,
-    maxconn=10,
-    **db_config
-)
-```
+### Check GPU Utilization
 
-## Database optimization
-
-### Add indexes
-
-```sql
--- Speed up work unit queries
-CREATE INDEX idx_work_units_status_iteration 
-ON work_units(status, iteration) WHERE status = 'pending';
-
-CREATE INDEX idx_work_units_claimed 
-ON work_units(claimed_at) WHERE status = 'in_progress';
-
--- Speed up worker queries
-CREATE INDEX idx_workers_heartbeat 
-ON workers(last_heartbeat);
-
--- Speed up gradient lookups
-CREATE INDEX idx_gradients_work_unit 
-ON gradients(work_unit_id);
-```
-
-### Regular maintenance
-
-```sql
--- Run periodically
-VACUUM ANALYZE work_units;
-VACUUM ANALYZE gradients;
-VACUUM ANALYZE workers;
-
--- Check table bloat
-SELECT schemaname, tablename,
-       pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename))
-FROM pg_tables
-WHERE schemaname = 'public'
-ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
-```
-
-### Clean old data
-
-```sql
--- Delete old gradients after aggregation
-DELETE FROM gradients
-WHERE work_unit_id IN (
-    SELECT id FROM work_units
-    WHERE iteration < (SELECT current_iteration FROM training_state) - 1
-);
-
--- Archive completed work units
-CREATE TABLE work_units_archive AS
-SELECT * FROM work_units
-WHERE iteration < CURRENT_ITERATION - 10;
-
-DELETE FROM work_units
-WHERE iteration < CURRENT_ITERATION - 10;
-```
-
-### Database configuration
-
-In `postgresql.conf`:
-```
-# Increase connection limit
-max_connections = 100
-
-# Increase shared buffers
-shared_buffers = 2GB
-
-# Increase work mem for sorting
-work_mem = 16MB
-
-# Enable parallel query
-max_parallel_workers_per_gather = 4
-```
-
-## Training optimization
-
-### Learning rate scheduling
-
-```python
-# Decrease learning rate over time
-if iteration % 1000 == 0:
-    for param_group in optimizer_g.param_groups:
-        param_group['lr'] *= 0.95
-```
-
-### Gradient accumulation
-
-Simulate larger batches:
-```python
-accumulation_steps = 4
-
-for i, batch in enumerate(batches):
-    loss = compute_loss(batch)
-    loss = loss / accumulation_steps
-    loss.backward()
-    
-    if (i + 1) % accumulation_steps == 0:
-        optimizer.step()
-        optimizer.zero_grad()
-```
-
-### Mixed precision training
-
-Faster on modern GPUs:
-```python
-from torch.cuda.amp import autocast, GradScaler
-
-scaler = GradScaler()
-
-with autocast():
-    fake_images = generator(noise)
-    fake_output = discriminator(fake_images)
-    loss_g = criterion(fake_output, real_labels)
-
-scaler.scale(loss_g).backward()
-scaler.step(optimizer_g)
-scaler.update()
-```
-
-## Network optimization
-
-### Gradient compression
-
-```python
-import torch
-
-def compress_gradients(gradients):
-    """Compress gradients before upload."""
-    # Quantize to 16-bit
-    compressed = {
-        k: v.half() for k, v in gradients.items()
-    }
-    return compressed
-
-def decompress_gradients(compressed):
-    """Decompress after download."""
-    return {
-        k: v.float() for k, v in compressed.items()
-    }
-```
-
-### Batch uploads
-
-Upload multiple results together:
-```python
-# Instead of uploading after each work unit
-results_buffer = []
-results_buffer.append(current_result)
-
-if len(results_buffer) >= 5:
-    upload_batch(results_buffer)
-    results_buffer.clear()
-```
-
-## Monitoring overhead
-
-### Reduce logging
-
-```python
-# Log every N iterations, not every one
-if iteration % 10 == 0:
-    log_progress(stats)
-```
-
-### Async heartbeats
-
-```python
-import threading
-
-def send_heartbeat_async():
-    while running:
-        update_heartbeat()
-        time.sleep(30)
-
-threading.Thread(target=send_heartbeat_async, daemon=True).start()
-```
-
-## Resource allocation
-
-### Worker distribution
-
-For N workers on same machine:
 ```bash
-# Distribute across GPUs
-CUDA_VISIBLE_DEVICES=0 python src/worker.py --config config1.yaml &
-CUDA_VISIBLE_DEVICES=1 python src/worker.py --config config2.yaml &
+# Real-time GPU monitoring
+nvidia-smi --query-gpu=utilization.gpu,memory.used,memory.total --format=csv -l 1
+
+# Target: >80% GPU utilization
 ```
 
-### CPU affinity
+### Worker Throughput
 
-Pin worker to specific cores:
-```python
-import os
-os.sched_setaffinity(0, {0, 1, 2, 3})  # Use cores 0-3
-```
+Monitor worker output for:
+- **Images/second**: Should be >100 for GPU, >10 for CPU
+- **Work unit completion time**: Should be <60 seconds for typical settings
+- **Gradient upload time**: Should be <5 seconds
 
-## Benchmarking
+### Database Performance
 
-### Measure worker performance
+If work units take too long to claim or complete:
+- Check network latency to database server
+- Verify database server isn't overloaded
+- Consider reducing `poll_interval`
 
-```python
-import time
+## Best practices
 
-start = time.time()
-gradients = compute_gradients(batch)
-elapsed = time.time() - start
-
-print(f'Gradient computation: {elapsed:.2f}s')
-print(f'Images/sec: {batch_size / elapsed:.1f}')
-```
-
-### Profile code
-
-```python
-import cProfile
-import pstats
-
-profiler = cProfile.Profile()
-profiler.enable()
-
-# Your code here
-process_work_unit()
-
-profiler.disable()
-stats = pstats.Stats(profiler)
-stats.sort_stats('cumulative')
-stats.print_stats(20)  # Top 20 functions
-```
-
-### Database query timing
-
-```sql
--- Enable query timing
-\timing on
-
--- Run query
-SELECT * FROM work_units WHERE status = 'pending';
-
--- Check slow queries
-SELECT query, mean_exec_time, calls
-FROM pg_stat_statements
-ORDER BY mean_exec_time DESC
-LIMIT 10;
-```
-
-## Best practices summary
-
-1. **Right-size batches** - Max out GPU memory without OOM
-2. **Index database** - Critical for large scale
-3. **Clean old data** - Prevent database bloat
-4. **Monitor continuously** - Catch issues early
-5. **Profile before optimizing** - Measure, don't guess
-6. **Balance trade-offs** - Speed vs quality vs complexity
+1. **Start conservative** - Begin with default settings
+2. **Monitor first** - Watch GPU/CPU usage before optimizing
+3. **Change one thing at a time** - Easier to identify impact
+4. **Match batch size to hardware** - Max out GPU memory without OOM errors
+5. **Tune for your class size** - Set `num_workunits_per_update` based on worker count
 
 ## Performance targets
 
-**Good performance:**
-- GPU utilization >80%
-- Work unit processing <30 seconds
-- Database queries <100ms
-- Worker throughput >100 images/second (GPU)
+**Good performance indicators:**
+- GPU utilization: >80%
+- Work unit processing: <30 seconds (for default config)
+- Worker throughput: >100 images/second (GPU), >10 images/second (CPU)
+- Database query time: <100ms
 
 **If below targets:**
-- Check batch sizes
-- Profile bottlenecks
-- Optimize database
-- Review network latency
+- Increase batch size (GPU workers)
+- Increase num_workers_dataloader (if CPU available)
+- Check network connection to database
+- See [Troubleshooting](troubleshooting.md)
+
+## Example configurations
+
+**Note:** Default settings in `config.yaml.template`:
+- `batch_size: 32`
+- `batches_per_work_unit: 10`
+- `num_workunits_per_update: 3`
+- `num_workers_dataloader: 4`
+- `poll_interval: 5`
+
+These examples show how to adjust for different class sizes:
+
+### Small class (3-5 workers)
+```yaml
+training:
+  batch_size: 64
+  batches_per_work_unit: 10
+  num_workunits_per_update: 2
+
+worker:
+  poll_interval: 5
+```
+
+### Medium class (10-20 workers)
+```yaml
+training:
+  batch_size: 128
+  batches_per_work_unit: 15
+  num_workunits_per_update: 8
+
+worker:
+  poll_interval: 8
+```
+
+### Large class (30+ workers)
+```yaml
+training:
+  batch_size: 128
+  batches_per_work_unit: 20
+  num_workunits_per_update: 15
+
+worker:
+  poll_interval: 10
+```
 
 ## Next steps
 
+- [Configuration Guide](../guides/configuration.md) - Detailed config options
 - [Troubleshooting](troubleshooting.md) - Fix performance issues
-- [Architecture](../architecture/overview.md) - Understand system design
-- [Configuration](../guides/configuration.md) - Tune hyperparameters
+- [Contributing](contributing.md) - Help implement advanced optimizations

@@ -12,7 +12,7 @@ training:
   batches_per_work_unit: 10
   latent_dim: 100
   image_size: 64
-  num_workers_per_update: 3  # Minimum workers before updating
+  num_workunits_per_update: 3   # Minimum work units before updating
   learning_rate: 0.0002
   beta1: 0.5
   beta2: 0.999

@@ -9,7 +9,6 @@ Thank you for your interest in contributing to GANNs with friends!
 - Add new features
 - Optimize performance
 - Create tutorials and examples
-- Help other users
 
 ## Getting started
 
@@ -18,330 +17,343 @@ Thank you for your interest in contributing to GANNs with friends!
 ```bash
 git clone https://github.com/YOUR_USERNAME/GANNs-with-freinds.git
 cd GANNs-with-freinds
-```
-
-### Set up development environment
-
-```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install development dependencies
-pip install pytest black pylint mypy
-```
-
-### Create a branch
-
-```bash
 git checkout -b feature/my-new-feature
 ```
 
-## Development workflow
+### Make your changes
 
-### 1. Make changes
-
-Edit code following the project conventions (see below).
-
-### 2. Test your changes
-
-```bash
-# Run tests
-pytest tests/
-
-# Run specific test
-pytest tests/test_models.py
-
-# Check code style
-black src/
-pylint src/
-
-# Type checking
-mypy src/
-```
-
-### 3. Commit
-
-```bash
-git add .
-git commit -m "Add feature: brief description"
-```
-
-Use clear commit messages:
-- "Fix: bug in gradient aggregation"
-- "Add: CPU auto-detection for workers"
-- "Docs: update installation guide"
-- "Refactor: simplify database queries"
-
-### 4. Push and create pull request
-
-```bash
-git push origin feature/my-new-feature
-```
-
-Then create a pull request on GitHub.
-
-## Code style
-
-### Python conventions
-
-- Follow PEP 8
-- Use type hints
-- Write docstrings for functions
-- Keep functions focused and small
-- Use meaningful variable names
-
-```python
-def load_model_weights(
-    model_path: str,
-    device: torch.device
-) -> Dict[str, torch.Tensor]:
-    """Load model weights from checkpoint file.
-    
-    Args:
-        model_path: Path to checkpoint file
-        device: Target device for weights
-    
-    Returns:
-        Dictionary containing model state dict
-    """
-    checkpoint = torch.load(model_path, map_location=device)
-    return checkpoint['model_state_dict']
-```
-
-### Single quotes
-
-Use single quotes for strings:
-
-```python
-# Good
-config = load_config('config.yaml')
-
-# Avoid
-config = load_config("config.yaml")
-```
-
-### Sentence case for headers
-
-All documentation headers use sentence case:
-
-```markdown
-# Installation guide
-
-## Setup instructions
-
-### Download dataset
-```
-
-### No emojis in code or docs
-
-Keep documentation professional and accessible.
-
-## Testing
-
-### Write tests for new features
-
-```python
-# tests/test_worker.py
-import pytest
-from src.worker import Worker
-
-def test_worker_initialization():
-    worker = Worker('test_config.yaml')
-    assert worker.device is not None
-    assert worker.batch_size > 0
-
-def test_worker_processes_work_unit():
-    # Test work unit processing
-    worker = Worker('test_config.yaml')
-    # Mock work unit test here
-```
-
-### Run full test suite
-
-```bash
-pytest tests/ -v
-```
-
-## Documentation
-
-### Update relevant docs
-
-If you change functionality, update:
-- README.md (if user-facing)
-- docs/ (detailed documentation)
-- Code docstrings
-- CHANGELOG.md
-
-### Build and check docs
-
-```bash
-cd docs
-pip install -r requirements.txt
-make html
-make serve  # View at http://localhost:8000
-```
-
-### Documentation style
-
-- Clear and concise
-- Include code examples
-- Use sentence case for headers
-- No emojis or symbols
-- Single quotes in code examples
+1. Edit the code
+2. Test manually by running the affected scripts
+3. Update documentation if needed
+4. Commit with a clear message
+5. Push and create a pull request
 
 ## Pull request guidelines
 
-### Before submitting
-
-- Tests pass
-- Code follows style guide
-- Documentation updated
-- Commits are clean and logical
-- PR description explains changes
-
-### PR description template
-
-```markdown
-## Description
-Brief description of changes
-
-## Type of change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Documentation update
-- [ ] Performance improvement
-- [ ] Code refactoring
-
-## Testing
-How were changes tested?
-
-## Checklist
-- [ ] Tests pass
-- [ ] Code follows style guide
-- [ ] Documentation updated
-- [ ] No breaking changes (or documented)
-```
+- Test your changes manually
+- Update documentation if needed
+- Write clear commit messages
+- Describe what changed and why in the PR description
 
 ## Reporting bugs
 
-### Create an issue
-
-Include:
-- Clear title
+Include in your bug report:
+- Clear title and description
 - Steps to reproduce
-- Expected behavior
-- Actual behavior
-- System information (OS, Python version, GPU)
+- Expected vs actual behavior
+- System info (OS, Python version, GPU)
 - Error messages and logs
 
-### Example bug report
+## Development philosophy
 
-```markdown
-**Title**: Worker crashes when batch size > 128
+This project uses AI-assisted development with human oversight. For details about the development approach, collaborative workflow, and concrete examples, see the [Development approach](../development-approach.md) section.
 
-**Description**:
-Worker crashes with CUDA out of memory when batch_size is set above 128 in config.yaml.
+## Advanced performance optimization ideas
 
-**Steps to reproduce**:
-1. Set batch_size: 256 in config.yaml
-2. Run python src/worker.py
-3. Worker crashes after claiming first work unit
+These are advanced code modifications that could significantly improve system performance. They require deeper understanding of the codebase and are excellent contributions for experienced developers or students learning about distributed systems optimization.
 
-**Expected**: Worker should process batch or reduce size automatically
+### Database Optimizations
 
-**Actual**: RuntimeError: CUDA out of memory
+#### Add indexes for faster queries
 
-**System**:
-- OS: Ubuntu 22.04
-- Python: 3.10.12
-- GPU: NVIDIA RTX 3060 (12GB)
-- PyTorch: 2.0.1+cu118
+```sql
+-- Speed up work unit queries
+CREATE INDEX idx_work_units_status_iteration 
+ON work_units(status, iteration) WHERE status = 'pending';
 
-**Logs**:
-[attach relevant logs]
+CREATE INDEX idx_work_units_claimed 
+ON work_units(claimed_at) WHERE status = 'in_progress';
+
+-- Speed up worker queries
+CREATE INDEX idx_workers_heartbeat 
+ON workers(last_heartbeat);
+
+-- Speed up gradient lookups
+CREATE INDEX idx_gradients_work_unit 
+ON gradients(work_unit_id);
 ```
 
-## Feature requests
+#### Connection pooling
 
-### Propose new features
+Currently each database operation creates a new connection. Implementing connection pooling could reduce overhead:
 
-Open an issue with:
-- Clear use case
-- Expected behavior
-- Why it's beneficial
-- Potential implementation approach
+```python
+from psycopg2 import pool
 
-### Discuss first
+class DatabaseManager:
+    def __init__(self):
+        self.connection_pool = pool.SimpleConnectionPool(
+            minconn=1,
+            maxconn=10,
+            **db_config
+        )
+    
+    def get_connection(self):
+        return self.connection_pool.getconn()
+    
+    def release_connection(self, conn):
+        self.connection_pool.putconn(conn)
+```
 
-For major features, discuss with maintainers before implementing.
+#### Regular maintenance
 
-## Code review process
+Add automated database cleanup:
 
-### What we look for
+```sql
+-- Delete old gradients after aggregation
+DELETE FROM gradients
+WHERE work_unit_id IN (
+    SELECT id FROM work_units
+    WHERE iteration < (SELECT current_iteration FROM training_state) - 1
+);
 
-- Correctness
-- Code quality
-- Test coverage
-- Documentation
-- Performance impact
-- Backward compatibility
+-- Archive old work units
+CREATE TABLE work_units_archive AS
+SELECT * FROM work_units
+WHERE iteration < CURRENT_ITERATION - 10;
 
-### Be responsive
+DELETE FROM work_units
+WHERE iteration < CURRENT_ITERATION - 10;
+```
 
-- Respond to review comments
-- Make requested changes
-- Ask questions if unclear
-- Be open to feedback
+### Training Optimizations
 
-## Project areas
+#### Mixed precision training
 
-### Priority contributions
+Use automatic mixed precision for faster training on modern GPUs:
 
-1. **Testing**
-   - Increase test coverage
-   - Add integration tests
-   - Test edge cases
+```python
+from torch.cuda.amp import autocast, GradScaler
 
-2. **Documentation**
-   - Improve clarity
-   - Add more examples
-   - Create tutorials
+class Worker:
+    def __init__(self, config_path):
+        # ... existing init code ...
+        self.scaler = GradScaler()
+    
+    def compute_gradients(self, real_batch):
+        with autocast():
+            fake_images = self.generator(self.noise)
+            fake_output = self.discriminator(fake_images)
+            loss_g = self.criterion(fake_output, self.real_labels)
+        
+        self.scaler.scale(loss_g).backward()
+        # ... rest of gradient computation
+```
 
-3. **Performance**
-   - Optimize database queries
-   - Reduce network overhead
-   - Improve gradient aggregation
+#### Gradient accumulation
 
-4. **Features**
-   - Multi-GPU support per worker
-   - Gradient compression
-   - Web-based monitoring dashboard
-   - Support for other datasets/models
+Simulate larger batch sizes without increasing memory:
 
-5. **Usability**
-   - Better error messages
-   - Improved logging
-   - Setup automation
+```python
+accumulation_steps = 4
 
-## Community
+for i, batch in enumerate(batches):
+    loss = compute_loss(batch)
+    loss = loss / accumulation_steps
+    loss.backward()
+    
+    if (i + 1) % accumulation_steps == 0:
+        optimizer.step()
+        optimizer.zero_grad()
+```
 
-### Be respectful
+### Network Optimizations
 
-- Assume good intentions
-- Be patient with beginners
-- Give constructive feedback
-- Follow code of conduct
+#### Gradient compression
 
-### Help others
+Reduce network traffic by compressing gradients:
 
-- Answer questions
-- Review pull requests
-- Improve documentation
-- Share knowledge
+```python
+def compress_gradients(gradients):
+    """Compress gradients before upload to database."""
+    # Quantize to float16
+    compressed = {
+        k: v.half() for k, v in gradients.items()
+    }
+    # Could also use: top-k sparsification, quantization, etc.
+    return compressed
+
+def decompress_gradients(compressed):
+    """Decompress after download from database."""
+    return {
+        k: v.float() for k, v in compressed.items()
+    }
+```
+
+#### Batched uploads
+
+Upload multiple work unit results together:
+
+```python
+class Worker:
+    def __init__(self):
+        self.results_buffer = []
+        self.buffer_size = 5
+    
+    def process_work_unit(self, work_unit):
+        gradients = self.compute_gradients(work_unit)
+        self.results_buffer.append((work_unit.id, gradients))
+        
+        if len(self.results_buffer) >= self.buffer_size:
+            self.upload_batch(self.results_buffer)
+            self.results_buffer.clear()
+```
+
+#### Local weight caching
+
+Only download weights when they change:
+
+```python
+class Worker:
+    def __init__(self):
+        self.cached_iteration = -1
+        self.cached_weights = None
+    
+    def get_weights(self):
+        current_iteration = self.db.get_current_iteration()
+        if current_iteration != self.cached_iteration:
+            self.cached_weights = self.db.get_weights()
+            self.cached_iteration = current_iteration
+        return self.cached_weights
+```
+
+### Monitoring Optimizations
+
+#### Async heartbeats
+
+Send heartbeats in background thread to avoid blocking:
+
+```python
+import threading
+
+class Worker:
+    def start_heartbeat(self):
+        def heartbeat_loop():
+            while self.running:
+                self.db.update_heartbeat(self.worker_id)
+                time.sleep(30)
+        
+        self.heartbeat_thread = threading.Thread(
+            target=heartbeat_loop, 
+            daemon=True
+        )
+        self.heartbeat_thread.start()
+```
+
+#### Reduced logging overhead
+
+Log less frequently in tight loops:
+
+```python
+# Instead of logging every iteration
+if iteration % 10 == 0:
+    logger.info(f"Progress: {iteration}")
+```
+
+### Profiling Tools
+
+#### Measure performance
+
+Add benchmarking code to find bottlenecks:
+
+```python
+import time
+
+class PerformanceTimer:
+    def __init__(self, name):
+        self.name = name
+        self.start_time = None
+    
+    def __enter__(self):
+        self.start_time = time.time()
+        return self
+    
+    def __exit__(self, *args):
+        elapsed = time.time() - self.start_time
+        print(f"{self.name}: {elapsed:.3f}s")
+
+# Usage:
+with PerformanceTimer("Gradient computation"):
+    gradients = compute_gradients(batch)
+
+with PerformanceTimer("Database upload"):
+    upload_gradients(gradients)
+```
+
+#### Code profiling
+
+Use cProfile to find slow functions:
+
+```python
+import cProfile
+import pstats
+
+profiler = cProfile.Profile()
+profiler.enable()
+
+# Code to profile
+process_work_unit()
+
+profiler.disable()
+stats = pstats.Stats(profiler)
+stats.sort_stats('cumulative')
+stats.print_stats(20)  # Show top 20 functions
+```
+
+### Resource Management
+
+#### CPU affinity
+
+Pin workers to specific CPU cores:
+
+```python
+import os
+
+def set_cpu_affinity(core_ids):
+    """Pin process to specific CPU cores."""
+    os.sched_setaffinity(0, set(core_ids))
+
+# Example: use cores 0-3 for this worker
+set_cpu_affinity([0, 1, 2, 3])
+```
+
+#### Multiple workers per GPU
+
+Run multiple worker processes on one GPU:
+
+```bash
+# Terminal 1
+CUDA_VISIBLE_DEVICES=0 python src/worker.py --config config.yaml &
+
+# Terminal 2
+CUDA_VISIBLE_DEVICES=0 python src/worker.py --config config.yaml &
+```
+
+### Implementation Notes
+
+**Before implementing:**
+- Profile to confirm the optimization is needed
+- Understand the trade-offs (complexity vs. performance gain)
+- Test manually to verify functionality
+- Document the changes thoroughly
+- Consider backward compatibility
+
+**Testing performance improvements:**
+- Measure before and after with realistic workloads
+- Test with multiple workers, not just one
+- Check for edge cases and failure modes
+- Verify results are numerically equivalent
+
+**Good first optimizations:**
+1. Database indexes (easy, high impact)
+2. Local weight caching (medium difficulty, good gains)
+3. Reduced logging (easy, modest gains)
+4. Connection pooling (medium difficulty, good for many workers)
+
+**Advanced optimizations:**
+1. Mixed precision training (requires careful testing)
+2. Gradient compression (complex, measure quality impact)
+3. Async operations (increases code complexity)
 
 ## License
 
@@ -349,10 +361,4 @@ By contributing, you agree that your contributions will be licensed under the pr
 
 ## Questions?
 
-- Open an issue for clarification
-- Ask in pull request comments
-- Contact project maintainers
-
-## Thank you!
-
-Your contributions make this project better for everyone. We appreciate your time and effort.
+Open an issue or contact the project maintainers.

@@ -2,7 +2,7 @@
 
 Frequently asked questions about distributed GAN training.
 
-## General questions
+## Getting started
 
 ### What is this project about?
 
@@ -11,25 +11,6 @@ An educational distributed deep learning system where students collectively trai
 ### Do I need a GPU?
 
 No. The system works with CPU-only workers. GPU is faster but optional.
-
-### How long does training take?
-
-Depends on:
-- Number of active workers
-- Hardware (GPU vs CPU)
-- Target quality
-
-Typical: 2-6 hours with 5-10 GPU workers for decent results.
-
-### Can I join training late?
-
-Yes! Workers can join anytime. Just start your worker and it will begin contributing.
-
-### What if I disconnect?
-
-No problem. Your work is saved. Restart your worker and continue. Training state is in the database.
-
-## Setup questions
 
 ### Which installation path should I choose?
 
@@ -59,7 +40,24 @@ Your instructor provides these. You need:
 
 Yes, but you'd be the coordinator, not a worker. See [instructor guide](../guides/instructors.md).
 
-## Training questions
+### Can I join training late?
+
+Yes! Workers can join anytime. Just start your worker and it will begin contributing.
+
+### What if I disconnect?
+
+No problem. Your work is saved. Restart your worker and continue. Training state is in the database.
+
+## Training and results
+
+### How long does training take?
+
+Depends on:
+- Number of active workers
+- Hardware (GPU vs CPU)
+- Target quality
+
+Typical: 2-6 hours with 5-10 GPU workers for decent results.
 
 ### How do I know it's working?
 
@@ -88,68 +86,6 @@ Different work units have different batches. Loss varies across batches. Look at
 - Results improve over time
 - Check `data/outputs/samples/` or Hugging Face
 - Realistic faces emerge after many iterations
-
-### Can I train my own model?
-
-Yes! Use local training mode:
-```bash
-python src/train_local.py --epochs 50
-```
-
-No database needed. See [local training guide](../setup/local-training.md).
-
-## Technical questions
-
-### How does coordination work?
-
-Workers poll the PostgreSQL database for work units, compute gradients, upload results. Coordinator aggregates gradients and updates weights. See [architecture overview](../architecture/overview.md).
-
-### What happens if my worker crashes?
-
-The work unit times out and is automatically reclaimed. Another worker (or you after restarting) will process it. No data loss.
-
-### Can I run multiple workers?
-
-Yes, if you have multiple GPUs. Create separate config files or run in different directories.
-
-### How is this different from PyTorch DDP?
-
-PyTorch DDP requires direct network communication. This uses database coordination, making it easier for distributed educational setups across networks/firewalls.
-
-### What's the database storing?
-
-- Model weights (current and historical)
-- Computed gradients from workers
-- Work unit assignments and status
-- Worker registration and statistics
-
-See [database schema](../architecture/database.md).
-
-## Performance questions
-
-### Why is training slow?
-
-- Need more workers
-- Workers may have slow hardware
-- Network latency to database
-- Check batch sizes and configuration
-
-### How can I speed it up?
-
-- Recruit more workers
-- Use GPU not CPU
-- Optimize database location (closer geographically)
-- Increase batch sizes (if memory allows)
-
-### What's the optimal number of workers?
-
-No hard limit. More workers = faster training (with diminishing returns). Typical: 5-15 workers for class project.
-
-### Does CPU training help?
-
-Yes! CPU workers contribute, though slower than GPU. Every worker helps.
-
-## Results questions
 
 ### How do I view generated faces?
 
@@ -191,6 +127,64 @@ image = to_pil(face_tensor)
 image.save('my_face.png')
 ```
 
+### Can I train my own model?
+
+Yes! Use local training mode:
+```bash
+python src/train_local.py --epochs 50
+```
+
+No database needed. See [local training guide](../setup/local-training.md).
+
+## System and performance
+
+### How does coordination work?
+
+Workers poll the PostgreSQL database for work units, compute gradients, upload results. Coordinator aggregates gradients and updates weights. See [architecture overview](../architecture/overview.md).
+
+### What's the database storing?
+
+- Model weights (current and historical)
+- Computed gradients from workers
+- Work unit assignments and status
+- Worker registration and statistics
+
+See [database schema](../architecture/database.md).
+
+### What happens if my worker crashes?
+
+The work unit times out and is automatically reclaimed. Another worker (or you after restarting) will process it. No data loss.
+
+### Can I run multiple workers?
+
+Yes, if you have multiple GPUs. Create separate config files or run in different directories.
+
+### How is this different from PyTorch DDP?
+
+PyTorch DDP requires direct network communication. This uses database coordination, making it easier for distributed educational setups across networks/firewalls.
+
+### Why is training slow?
+
+- Need more workers
+- Workers may have slow hardware
+- Network latency to database
+- Check batch sizes and configuration
+
+### How can I speed it up?
+
+- Recruit more workers
+- Use GPU not CPU
+- Optimize database location (closer geographically)
+- Increase batch sizes (if memory allows)
+
+### What's the optimal number of workers?
+
+No hard limit. More workers = faster training (with diminishing returns). Typical: 5-15 workers for class project.
+
+### Does CPU training help?
+
+Yes! CPU workers contribute, though slower than GPU. Every worker helps.
+
 ## Troubleshooting questions
 
 ### Worker says "no work units available"
@@ -219,7 +213,7 @@ See [troubleshooting guide](troubleshooting.md).
 - Restart from last checkpoint
 - May indicate training instability
 
-## Educational questions
+## Learning and contributing
 
 ### What will I learn?
 
@@ -248,8 +242,6 @@ Yes! This is open source and educational. Try:
 - PyTorch GAN tutorials
 - This project's architecture docs
 
-## Contributing questions
-
 ### Can I contribute improvements?
 
 Yes! This is an educational project. Contributions welcome:
@@ -270,7 +262,7 @@ See [contributing guide](contributing.md).
 
 Yes, with attribution. See LICENSE file. Consider citing if you publish results.
 
-## Advanced questions
+## Advanced topics
 
 ### How do I add Hugging Face integration?
 

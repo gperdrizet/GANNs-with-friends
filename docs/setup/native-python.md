@@ -41,8 +41,11 @@ cd GANNs-with-freinds
 ### 3. Create virtual environment
 
 ```bash
-python -m venv venv
+python -m venv .venv
 ```
+
+.. note::
+   On some systems, you may need to use `python3` to invoke the Python interpreter
 
 Activate the environment:
 

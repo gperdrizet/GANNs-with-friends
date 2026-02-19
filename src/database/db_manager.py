@@ -320,6 +320,28 @@ class DatabaseManager:
                 work_unit.status = 'completed'
                 work_unit.completed_at = datetime.utcnow()
     
+    def cancel_pending_work_units(self, iteration: int) -> int:
+        """Cancel all pending work units for a given iteration.
+        
+        This is called when the coordinator aggregates gradients and moves
+        to the next iteration, so workers don't waste time on stale work.
+        
+        Args:
+            iteration: Training iteration to cancel work units for
+            
+        Returns:
+            Number of work units cancelled
+        """
+        with self.get_session() as session:
+            result = session.query(WorkUnit).filter(
+                WorkUnit.iteration == iteration,
+                WorkUnit.status.in_(['pending', 'claimed'])
+            ).update(
+                {'status': 'cancelled'},
+                synchronize_session=False
+            )
+            return result
+    
     def get_work_unit_stats(self, iteration: int) -> Dict[str, int]:
         """Get statistics about work units for an iteration.
         

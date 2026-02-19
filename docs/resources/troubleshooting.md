@@ -153,11 +153,11 @@ ls data/outputs/samples/
 - Need more active workers
 - Check database performance
 - Verify network speed
-- Increase `num_workers_per_update` to gather more gradients
+- Increase `num_workunits_per_update` to gather more work unit gradients
 
 ### Discriminator dominates
 
-**Problem**: Discriminator loss → 0, generator loss increases
+**Problem**: Discriminator loss goes to 0, generator loss increases
 
 **Solution**:
 ```yaml

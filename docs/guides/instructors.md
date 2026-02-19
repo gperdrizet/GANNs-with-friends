@@ -76,7 +76,7 @@ database:
 training:
   batch_size: 32
   batches_per_work_unit: 10 
-  num_workers_per_update: 3  # Wait for N workers before updating
+  num_workunits_per_update: 3  # Wait for N work units before updating
 
 huggingface:  # Optional but recommended
   enabled: true
@@ -166,7 +166,7 @@ Loads latest state from database and continues.
 
 Edit `config.yaml` and restart coordinator. Changes take effect:
 - `batch_size` - affects new work units
-- `num_workers_per_update` - how many workers to wait for
+- `num_workunits_per_update` - how many work units to wait for
 - `sample_interval` - frequency of sample generation
 
 ### Handle stalled workers
@@ -251,7 +251,7 @@ If enabled, students can:
 ### Training very slow
 
 - Need more workers (encourage participation)
-- Increase `num_workers_per_update` to wait for more gradients
+- Increase `num_workunits_per_update` to wait for more work unit gradients
 - Check database performance
 - Verify network isn't bottleneck
 

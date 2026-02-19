@@ -29,7 +29,7 @@ This project offers two devcontainer configurations:
 - Running on Mac (Intel or Apple Silicon)
 - No GPU available
 - Don't have Docker GPU support
-- Just want to develop/test code
+- Just want to develop/test code without GPU accelerated training
 
 **Features:**
 - PyTorch CPU-only (auto-installed)
@@ -37,7 +37,7 @@ This project offers two devcontainer configurations:
 - Based on Microsoft's Python 3.10 devcontainer
 
 **Requirements:**
-- Docker Desktop
+- Docker
 - 10GB free disk space
 
 ## How to Choose
@@ -57,4 +57,4 @@ To switch between configurations:
 2. Reopen the project folder
 3. Select the other configuration when prompted
 
-Or use `F1` → "Dev Containers: Reopen in Container" → choose configuration
+Or use `F1` > "Dev Containers: Reopen in Container" > choose configuration

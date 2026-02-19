@@ -72,7 +72,7 @@ class MainCoordinator:
         # Training config
         self.batch_size = self.config['training']['batch_size']
         self.batches_per_work_unit = self.config['training']['batches_per_work_unit']
-        self.min_workers_per_update = self.config['training']['num_workers_per_update']
+        self.min_workunits_per_update = self.config['training']['num_workunits_per_update']
         self.latent_dim = self.config['training']['latent_dim']
         
         # Calculate work units
@@ -180,10 +180,10 @@ class MainCoordinator:
                 print(f'All work units completed for iteration {iteration}')
                 return True
             
-            # Check if we have minimum number of gradients
+            # Check if we have minimum number of work unit gradients
             gen_gradients = self.db.get_gradients_for_iteration('generator', iteration)
-            if len(gen_gradients) >= self.min_workers_per_update:
-                print(f'Minimum threshold reached: {len(gen_gradients)} gradients collected')
+            if len(gen_gradients) >= self.min_workunits_per_update:
+                print(f'Minimum threshold reached: {len(gen_gradients)} work unit gradients collected')
                 return True
             
             # Sleep before checking again
@@ -234,6 +234,12 @@ class MainCoordinator:
         
         # Clean up gradients from database
         self.db.delete_gradients_for_iteration(iteration)
+        
+        # Cancel remaining pending work units from this iteration
+        # (since we've aggregated enough gradients and are moving forward)
+        cancelled = self.db.cancel_pending_work_units(iteration)
+        if cancelled > 0:
+            print(f'Cancelled {cancelled} pending work units from iteration {iteration}')
         
         print('Models updated successfully!')
     
@@ -299,7 +305,7 @@ class MainCoordinator:
         print(f'  Batches per work unit: {self.batches_per_work_unit}')
         print(f'  Images per work unit: {images_per_work_unit}')
         print(f'  Work units per epoch: {work_units_per_epoch}')
-        print(f'  Min workers per update: {self.min_workers_per_update}')
+        print(f'  Min work units per update: {self.min_workunits_per_update}')
         
         iteration = 0
         
