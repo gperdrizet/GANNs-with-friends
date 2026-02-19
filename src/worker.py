@@ -18,7 +18,7 @@ from database.db_manager import DatabaseManager
 from utils import (
     load_config, build_db_url, get_device, get_gpu_name, 
     get_hostname, generate_worker_id, compute_gradient_dict,
-    print_training_stats, ensure_dataset_available
+    print_training_stats, ensure_dataset_available, get_system_info
 )
 
 
@@ -43,7 +43,7 @@ class Worker:
         
         # Generate worker ID
         self.worker_id = generate_worker_id()
-        self.hostname = get_hostname()
+        self.hostname = self.config['worker'].get('name') or get_hostname()
         self.gpu_name = get_gpu_name(gpu_id)
         
         # Setup device
@@ -72,9 +72,23 @@ class Worker:
         # Loss function
         self.criterion = nn.BCEWithLogitsLoss()
         
+        # Get system info for registration (graceful error handling)
+        try:
+            system_info = get_system_info(gpu_id)
+        except Exception as e:
+            print(f'Warning: Could not collect system info: {e}')
+            system_info = {'cpu_cores': None, 'ram_gb': None, 'gpu_vram_gb': None}
+        
         # Register worker in database
         print(f'Registering worker: {self.worker_id}')
-        self.db.register_worker(self.worker_id, self.hostname, self.gpu_name)
+        self.db.register_worker(
+            self.worker_id, 
+            self.hostname, 
+            self.gpu_name,
+            cpu_cores=system_info['cpu_cores'],
+            ram_gb=system_info['ram_gb'],
+            gpu_vram_gb=system_info['gpu_vram_gb']
+        )
         
         # Training config
         self.latent_dim = self.config['training']['latent_dim']
@@ -85,7 +99,14 @@ class Worker:
         self.last_heartbeat = time.time()
         
         print(f'Worker {self.worker_id} initialized successfully!')
+        print(f'Name: {self.hostname}')
         print(f'GPU: {self.gpu_name}')
+        if system_info['cpu_cores']:
+            print(f'CPU cores: {system_info["cpu_cores"]}')
+        if system_info['ram_gb']:
+            print(f'RAM: {system_info["ram_gb"]:.1f} GB')
+        if system_info['gpu_vram_gb']:
+            print(f'GPU VRAM: {system_info["gpu_vram_gb"]:.1f} GB')
         print(f'Dataset size: {len(self.dataset)}')
     
     def update_heartbeat(self):

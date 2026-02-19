@@ -25,9 +25,14 @@ from database.db_manager import DatabaseManager
 # Page configuration
 st.set_page_config(
     page_title="GANNs with Friends - Dashboard",
-    page_icon="🎨",
+    page_icon="G",
     layout="wide"
 )
+
+# Estimated FLOPs per image for DCGAN training (forward + backward)
+# Generator: ~454 MFLOPs forward, Discriminator: ~214 MFLOPs forward (x2 for real/fake)
+# Backward passes ~2x forward, total ~2.6 GFLOPs per image
+GFLOPS_PER_IMAGE = 2.6
 
 
 @st.cache_resource
@@ -60,8 +65,8 @@ def get_sample_images(samples_dir: Path, limit: int = 8):
 def main():
     """Main dashboard."""
     
-    st.title("🎨 GANNs with Friends")
-    st.markdown("### Distributed GAN Training Dashboard")
+    st.title("GANNs with Friends")
+    st.markdown("### Distributed GAN training dashboard")
     
     # Get database connection
     try:
@@ -89,12 +94,12 @@ def main():
     
     # ==================== Training Stats ====================
     st.markdown("---")
-    st.subheader("📊 Training Status")
+    st.subheader("Training status")
     
     col1, col2, col3, col4, col5 = st.columns(5)
     
     with col1:
-        status = "🟢 Active" if training_state.get('training_active') else "🔴 Stopped"
+        status = "Active" if training_state.get('training_active') else "Stopped"
         st.metric("Status", status)
     
     with col2:
@@ -105,31 +110,31 @@ def main():
     
     with col4:
         total_images = training_state.get('total_images_processed', 0)
-        st.metric("Images Processed", f"{total_images:,}")
+        st.metric("Images processed", f"{total_images:,}")
     
     with col5:
         # Count active workers
         active_workers = db.get_active_workers(timeout_seconds=120)
-        st.metric("Active Workers", len(active_workers))
+        st.metric("Active workers", len(active_workers))
     
     # Current losses
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         g_loss = training_state.get('g_loss')
-        st.metric("Generator Loss", f"{g_loss:.4f}" if g_loss else "—")
+        st.metric("Generator loss", f"{g_loss:.4f}" if g_loss else "—")
     with col2:
         d_loss = training_state.get('d_loss')
-        st.metric("Discriminator Loss", f"{d_loss:.4f}" if d_loss else "—")
+        st.metric("Discriminator loss", f"{d_loss:.4f}" if d_loss else "—")
     with col3:
         d_real = training_state.get('d_real_acc')
-        st.metric("D Real Accuracy", f"{d_real:.1%}" if d_real else "—")
+        st.metric("D real accuracy", f"{d_real:.1%}" if d_real else "—")
     with col4:
         d_fake = training_state.get('d_fake_acc')
-        st.metric("D Fake Accuracy", f"{d_fake:.1%}" if d_fake else "—")
+        st.metric("D fake accuracy", f"{d_fake:.1%}" if d_fake else "—")
     
     # ==================== Learning Curves ====================
     st.markdown("---")
-    st.subheader("📈 Learning Curves")
+    st.subheader("Learning curves")
     
     loss_history = db.get_loss_history()
     
@@ -139,7 +144,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("**Generator & Discriminator Loss**")
+            st.markdown("**Generator & discriminator loss**")
             loss_df = df[['iteration', 'g_loss', 'd_loss']].melt(
                 id_vars=['iteration'],
                 var_name='Model',
@@ -155,7 +160,7 @@ def main():
             )
         
         with col2:
-            st.markdown("**Discriminator Accuracy**")
+            st.markdown("**Discriminator accuracy**")
             if 'd_real_acc' in df.columns and df['d_real_acc'].notna().any():
                 acc_df = df[['iteration', 'd_real_acc', 'd_fake_acc']].melt(
                     id_vars=['iteration'],
@@ -163,8 +168,8 @@ def main():
                     value_name='Accuracy'
                 )
                 acc_df['Type'] = acc_df['Type'].map({
-                    'd_real_acc': 'Real Images',
-                    'd_fake_acc': 'Fake Images'
+                    'd_real_acc': 'Real images',
+                    'd_fake_acc': 'Fake images'
                 })
                 st.line_chart(
                     acc_df.pivot(index='iteration', columns='Type', values='Accuracy'),
@@ -177,7 +182,7 @@ def main():
     
     # ==================== Sample Images ====================
     st.markdown("---")
-    st.subheader("🖼️ Generated Samples")
+    st.subheader("Generated samples")
     
     samples_dir = Path('data/outputs/samples')
     sample_images = get_sample_images(samples_dir, limit=8)
@@ -203,7 +208,7 @@ def main():
     
     # ==================== Worker Leaderboard ====================
     st.markdown("---")
-    st.subheader("👥 Worker Leaderboard")
+    st.subheader("Worker leaderboard")
     
     all_workers = db.get_all_workers()
     
@@ -217,17 +222,17 @@ def main():
             lambda x: format_duration((now - x).total_seconds()) + " ago" if x else "Never"
         )
         
-        # Status emoji
-        def status_emoji(row):
+        # Status indicator
+        def status_indicator(row):
             if row['last_heartbeat']:
                 seconds_ago = (now - row['last_heartbeat']).total_seconds()
                 if seconds_ago < 60:
-                    return "🟢"  # Active
+                    return "Active"
                 elif seconds_ago < 300:
-                    return "🟡"  # Idle
-            return "🔴"  # Offline
+                    return "Idle"
+            return "Offline"
         
-        worker_df['status_icon'] = worker_df.apply(status_emoji, axis=1)
+        worker_df['status_icon'] = worker_df.apply(status_indicator, axis=1)
         
         # Format for display
         display_df = worker_df[[
@@ -235,7 +240,7 @@ def main():
             'total_work_units', 'total_images', 'last_seen'
         ]].copy()
         
-        display_df.columns = ['', 'Worker ID', 'Hostname', 'GPU', 'Work Units', 'Images', 'Last Seen']
+        display_df.columns = ['Status', 'Worker ID', 'Name', 'GPU', 'Work units', 'Images', 'Last seen']
         
         # Truncate worker ID for display
         display_df['Worker ID'] = display_df['Worker ID'].str[:12] + '...'
@@ -252,11 +257,83 @@ def main():
         
         col1, col2, col3 = st.columns(3)
         with col1:
-            st.metric("Total Workers (all time)", len(all_workers))
+            st.metric("Total workers (all time)", len(all_workers))
         with col2:
-            st.metric("Total Work Units Completed", f"{total_work_units:,}")
+            st.metric("Total work units completed", f"{total_work_units:,}")
         with col3:
-            st.metric("Total Images Processed", f"{total_images:,}")
+            st.metric("Total images processed", f"{total_images:,}")
+        
+        # ==================== Cluster Resources ====================
+        st.markdown("---")
+        st.subheader("Cluster resources")
+        
+        # Aggregate system resources from all workers
+        total_cpu_cores = sum(w.get('cpu_cores') or 0 for w in all_workers)
+        total_ram_gb = sum(w.get('ram_gb') or 0 for w in all_workers)
+        total_gpu_vram_gb = sum(w.get('gpu_vram_gb') or 0 for w in all_workers)
+        gpu_count = sum(1 for w in all_workers if w.get('gpu_vram_gb'))
+        
+        # Check for incomplete data
+        workers_missing_cpu = sum(1 for w in all_workers if w.get('cpu_cores') is None)
+        workers_missing_ram = sum(1 for w in all_workers if w.get('ram_gb') is None)
+        has_incomplete_data = workers_missing_cpu > 0 or workers_missing_ram > 0
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            label = "Total CPU cores" + ("*" if workers_missing_cpu else "")
+            st.metric(label, f"{total_cpu_cores:,}")
+        with col2:
+            label = "Total RAM" + ("*" if workers_missing_ram else "")
+            st.metric(label, f"{total_ram_gb:,.1f} GB")
+        with col3:
+            st.metric("GPUs", f"{gpu_count}")
+        with col4:
+            st.metric("Total GPU VRAM", f"{total_gpu_vram_gb:,.1f} GB")
+        
+        if has_incomplete_data:
+            missing_parts = []
+            if workers_missing_cpu:
+                missing_parts.append(f"{workers_missing_cpu} worker(s) missing CPU data")
+            if workers_missing_ram:
+                missing_parts.append(f"{workers_missing_ram} worker(s) missing RAM data")
+            st.caption(f"*Incomplete: {', '.join(missing_parts)}. Workers may need to update to report system info.")
+        
+        # ==================== Throughput ====================
+        st.markdown("---")
+        st.subheader("Throughput")
+        
+        # Calculate images per second from recent history
+        loss_history = db.get_loss_history()
+        
+        if len(loss_history) >= 2:
+            # Get timestamps from training state updates
+            recent_workers = [w for w in all_workers if w.get('last_heartbeat')]
+            if recent_workers:
+                # Estimate throughput from total images and training duration
+                first_worker = min(recent_workers, key=lambda w: w['created_at'])
+                training_duration = (datetime.utcnow() - first_worker['created_at']).total_seconds()
+                
+                if training_duration > 0:
+                    images_per_sec = total_images / training_duration
+                    gflops = images_per_sec * GFLOPS_PER_IMAGE
+                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
+                        st.metric("Images/second", f"{images_per_sec:.1f}")
+                    with col2:
+                        if gflops >= 1000:
+                            st.metric("Compute throughput", f"{gflops/1000:.2f} TFLOPS")
+                        else:
+                            st.metric("Compute throughput", f"{gflops:.1f} GFLOPS")
+                    with col3:
+                        st.metric("Training time", format_duration(training_duration))
+                else:
+                    st.info("Calculating throughput...")
+            else:
+                st.info("Waiting for worker data...")
+        else:
+            st.info("Need more training data to calculate throughput.")
+            
     else:
         st.info("No workers have connected yet.")
     
@@ -264,7 +341,7 @@ def main():
     st.markdown("---")
     st.markdown(
         "<div style='text-align: center; color: gray;'>"
-        "GANNs with Friends - Educational Distributed GAN Training | "
+        "GANNs with Friends - Educational distributed GAN training | "
         "<a href='https://github.com/gperdrizet/GANNs-with-friends'>GitHub</a>"
         "</div>",
         unsafe_allow_html=True

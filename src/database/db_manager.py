@@ -413,8 +413,25 @@ class DatabaseManager:
     
     # ==================== Workers ====================
     
-    def register_worker(self, worker_id: str, hostname: str = None, gpu_name: str = None):
-        """Register a new worker or update existing one."""
+    def register_worker(
+        self, 
+        worker_id: str, 
+        hostname: str = None, 
+        gpu_name: str = None,
+        cpu_cores: int = None,
+        ram_gb: float = None,
+        gpu_vram_gb: float = None
+    ):
+        """Register a new worker or update existing one.
+        
+        Args:
+            worker_id: Unique worker identifier
+            hostname: Worker hostname or display name
+            gpu_name: GPU name (e.g., 'NVIDIA RTX 3080')
+            cpu_cores: Number of CPU cores
+            ram_gb: System RAM in GB
+            gpu_vram_gb: GPU VRAM in GB (None for CPU workers)
+        """
         with self.get_session() as session:
             worker = session.query(Worker).filter(Worker.worker_id == worker_id).first()
             
@@ -426,12 +443,21 @@ class DatabaseManager:
                     worker.hostname = hostname
                 if gpu_name:
                     worker.gpu_name = gpu_name
+                if cpu_cores is not None:
+                    worker.cpu_cores = cpu_cores
+                if ram_gb is not None:
+                    worker.ram_gb = ram_gb
+                if gpu_vram_gb is not None:
+                    worker.gpu_vram_gb = gpu_vram_gb
             else:
                 # Create new worker
                 worker = Worker(
                     worker_id=worker_id,
                     hostname=hostname,
                     gpu_name=gpu_name,
+                    cpu_cores=cpu_cores,
+                    ram_gb=ram_gb,
+                    gpu_vram_gb=gpu_vram_gb,
                     status='active'
                 )
                 session.add(worker)
@@ -582,6 +608,9 @@ class DatabaseManager:
                 'worker_id': w.worker_id,
                 'hostname': w.hostname,
                 'gpu_name': w.gpu_name,
+                'cpu_cores': w.cpu_cores,
+                'ram_gb': w.ram_gb,
+                'gpu_vram_gb': w.gpu_vram_gb,
                 'status': w.status,
                 'total_work_units': w.total_work_units,
                 'total_batches': w.total_batches,

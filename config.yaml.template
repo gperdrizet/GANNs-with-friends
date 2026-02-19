@@ -1,24 +1,25 @@
 # Configuration for Distributed GAN Training
 
 database:
-  host: YOUR_DATABASE_HOST  # Provided by instructor
+  host: YOUR_DATABASE_HOST
   port: 54321
   database: distributed_gan
-  user: YOUR_DATABASE_USER  # Provided by instructor
-  password: YOUR_DATABASE_PASSWORD  # Provided by instructor
+  user: YOUR_DATABASE_USER
+  password: YOUR_DATABASE_PASSWORD
 
 training:
   batch_size: 32
   batches_per_work_unit: 10
   latent_dim: 100
   image_size: 64
-  num_workunits_per_update: 3   # Minimum work units before updating
+  num_workunits_per_update: 3
   learning_rate: 0.0002
   beta1: 0.5
   beta2: 0.999
 
 worker:
-  poll_interval: 5  # seconds between work unit polls
+  name:                   # Optional: Your name or identifier (shown in dashboard)
+  poll_interval: 5        # seconds between work unit polls
   heartbeat_interval: 30  # seconds between heartbeat updates
   work_unit_timeout: 300  # seconds before work unit times out
 
@@ -33,6 +34,7 @@ huggingface:
   #   2. Set repo_id to: YOUR_USERNAME/YOUR_REPO_NAME
   #   3. Add your token from huggingface.co/settings/tokens (needs write access)
   #   4. Set enabled: true
+
   enabled: false
   repo_id: gperdrizet/GANNs-with-friends  # Default: project repo (read-only for downloads)
   token: ''  # Only needed if pushing to your own repo
