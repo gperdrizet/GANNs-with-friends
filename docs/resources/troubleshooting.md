@@ -76,12 +76,12 @@ training:
 - Check you have ~1.5 GB free disk space
 
 ```bash
-# Verify dataset location after download
-ls data/celeba_torchvision/celeba/img_align_celeba/
+# Verify dataset zip exists after download
+ls data/celeba_torchvision/data/img_align_celeba.zip
 
 # Check config.yaml path matches
 data:
-  dataset_path: data/celeba_torchvision/celeba/img_align_celeba
+  dataset_path: data/celeba_torchvision/data/img_align_celeba
 ```
 
 ### No work units available

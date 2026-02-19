@@ -31,7 +31,7 @@ worker:
 
 # ==================== Data (all roles) ====================
 data:
-  dataset_path: data/celeba_torchvision/celeba/img_align_celeba  # Downloaded automatically if not present
+  dataset_path: data/celeba_torchvision/data/img_align_celeba  # Downloaded automatically if not present
   num_workers_dataloader: 4  # Number of dataloader workers
 
 # ==================== Hugging Face (coordinator only) ====================

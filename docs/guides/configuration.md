@@ -194,13 +194,13 @@ Dataset settings.
 
 ```yaml
 data:
-  dataset_path: data/celeba_torchvision/celeba/img_align_celeba
+  dataset_path: data/celeba_torchvision/data/img_align_celeba
   num_workers_dataloader: 4
 ```
 
 ### Options
 
-**`dataset_path`** (string, default: data/celeba_torchvision/celeba/img_align_celeba)
+**`dataset_path`** (string, default: data/celeba_torchvision/data/img_align_celeba)
 - Path to CelebA dataset images
 - If the dataset is not found at this path, it will be automatically downloaded from Hugging Face
 - Can be relative or absolute
