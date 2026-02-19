@@ -15,8 +15,8 @@ Thank you for your interest in contributing to GANNs with friends!
 ### Fork and clone
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/GANNs-with-freinds.git
-cd GANNs-with-freinds
+git clone https://github.com/YOUR_USERNAME/GANNs-with-friends.git
+cd GANNs-with-friends
 git checkout -b feature/my-new-feature
 ```
 

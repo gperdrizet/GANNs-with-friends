@@ -67,19 +67,21 @@ training:
 
 ### Worker can't find dataset
 
-**Problem**: `FileNotFoundError: data/celeba not found`
+**Problem**: `RuntimeError: Dataset not found` or similar
 
 **Solution**:
+- The dataset should download automatically from Hugging Face on first run
+- If download fails, check your internet connection
+- Verify `huggingface.repo_id` is set in `config.yaml`
+- Check you have ~1.5 GB free disk space
+
 ```bash
-# Download dataset
-python scripts/download_celeba.py
+# Verify dataset location after download
+ls data/celeba_torchvision/celeba/img_align_celeba/
 
-# Verify location
-ls data/celeba/img_align_celeba/
-
-# Check config.yaml path
+# Check config.yaml path matches
 data:
-  dataset_path: ./data/celeba
+  dataset_path: data/celeba_torchvision/celeba/img_align_celeba
 ```
 
 ### No work units available
@@ -296,11 +298,11 @@ drive.mount('/content/drive')
 ```python
 # Ensure in correct directory
 import os
-os.chdir('/path/to/GANNs-with-freinds')
+os.chdir('/path/to/GANNs-with-friends')
 
 # Or add to path
 import sys
-sys.path.insert(0, '/path/to/GANNs-with-freinds/src')
+sys.path.insert(0, '/path/to/GANNs-with-friends/src')
 ```
 
 ### Git issues

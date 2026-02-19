@@ -63,8 +63,8 @@ nvidia-smi
 ### 2. Clone repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/GANNs-with-freinds.git
-cd GANNs-with-freinds
+git clone https://github.com/YOUR_USERNAME/GANNs-with-friends.git
+cd GANNs-with-friends
 ```
 
 ### 3. Open in container
@@ -90,17 +90,7 @@ cd GANNs-with-freinds
 - All project dependencies
 - Jupyter notebook support
 
-### 4. Download dataset
-
-Once the container is running:
-
-```bash
-python scripts/download_celeba.py
-```
-
-This downloads ~1.4 GB of celebrity face images.
-
-### 5. Configure database
+### 4. Configure database
 
 ```bash
 cp config.yaml.template config.yaml
@@ -117,16 +107,19 @@ database:
   password: YOUR_PASSWORD
 ```
 
-### 6. Start worker
+### 5. Start worker
 
 ```bash
 python src/worker.py
 ```
 
+On first run, the dataset will be automatically downloaded from Hugging Face (~1.4 GB).
+
 **GPU configuration output:**
 ```
 Initializing worker...
 Using GPU: NVIDIA GeForce RTX 3080
+Dataset found locally (202,599 images)
 Worker abc123 initialized successfully!
 Polling for work...
 ```
@@ -135,6 +128,7 @@ Polling for work...
 ```
 Initializing worker...
 Using CPU
+Dataset found locally (202,599 images)
 Worker abc123 initialized successfully!
 Polling for work...
 ```

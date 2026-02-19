@@ -27,9 +27,10 @@ All paths follow the same basic pattern:
 
 1. Clone or fork the repository
 2. Install dependencies (varies by path)
-3. Download the CelebA dataset
-4. Configure database connection in `config.yaml`
-5. Start the worker: `python src/worker.py`
+3. Configure database connection in `config.yaml`
+4. Start the worker: `python src/worker.py`
+
+The CelebA dataset will be automatically downloaded from Hugging Face on first run.
 
 Your GPU (or CPU) is now part of the training cluster!
 
@@ -56,9 +57,6 @@ Or use a cloud provider:
 ```bash
 # Install dependencies
 pip install -r requirements.txt
-
-# Download dataset
-python scripts/download_celeba.py
 
 # Configure database in config.yaml
 cp config.yaml.template config.yaml

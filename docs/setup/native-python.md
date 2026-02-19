@@ -5,16 +5,16 @@ Direct installation on your system without Docker.
 ## Advantages
 
 - Complete control over environment
-- No Docker overhead
-- Faster iteration for development
+- No Docker required
 - Works on any system with Python
+
+## Disadvantages
+- More manual set-up required
 
 ## Prerequisites
 
 - Python 3.10 or later
 - pip package manager
-- NVIDIA GPU with CUDA 11.8 (for GPU support)
-  - Or CPU-only mode (no GPU required)
 - 10GB free disk space
 
 ## Installation steps
@@ -34,8 +34,8 @@ If you need to install Python:
 ### 2. Clone repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/GANNs-with-freinds.git
-cd GANNs-with-freinds
+git clone https://github.com/YOUR_USERNAME/GANNs-with-friends.git
+cd GANNs-with-friends
 ```
 
 ### 3. Create virtual environment
@@ -57,7 +57,7 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-You should see `(venv)` in your prompt.
+You should see `(.venv)` in your prompt.
 
 ### 4. Install dependencies
 
@@ -92,15 +92,7 @@ python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
 python -c "from src.models.dcgan import Generator; print('Models OK')"
 ```
 
-### 6. Download dataset
-
-```bash
-python scripts/download_celeba.py
-```
-
-This downloads ~1.4 GB to `data/celeba/`.
-
-### 7. Configure database
+### 6. Configure database
 
 ```bash
 cp config.yaml.template config.yaml
@@ -117,19 +109,23 @@ database:
   password: YOUR_PASSWORD
 ```
 
-### 8. Start worker
+### 7. Start worker
 
 ```bash
 python src/worker.py
 ```
+
+On first run, the dataset will be automatically downloaded from Hugging Face (~1.4 GB).
 
 Expected output:
 ```
 Initializing worker...
 Using GPU: NVIDIA GeForce RTX 3080
 # Or: Using CPU
+Dataset not found locally. Downloading from Hugging Face...
+Extracting dataset...
+Dataset ready (202,599 images)
 Worker abc123 initialized successfully!
-Dataset size: 202,599 images
 Polling for work...
 ```
 

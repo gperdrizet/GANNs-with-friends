@@ -99,6 +99,78 @@ def generate_worker_id() -> str:
     return f'{get_hostname()}_{uuid.uuid4().hex[:8]}'
 
 
+def ensure_dataset_available(config: Dict[str, Any]) -> bool:
+    """Ensure CelebA dataset is available locally, downloading from HF if needed.
+    
+    Checks if the dataset exists at the path specified in config. If not found,
+    downloads from the Hugging Face repository and extracts it.
+    
+    Args:
+        config: Configuration dictionary containing data.dataset_path and
+                huggingface.repo_id settings
+                
+    Returns:
+        True if dataset is available (either locally or after download)
+        
+    Raises:
+        RuntimeError: If dataset cannot be found or downloaded
+    """
+    import zipfile
+    
+    dataset_path = Path(config['data']['dataset_path'])
+    
+    # Check if dataset already exists locally
+    if dataset_path.exists():
+        image_count = len(list(dataset_path.glob('*.jpg')))
+        if image_count > 0:
+            print(f'Dataset found locally ({image_count:,} images)')
+            return True
+    
+    # Dataset not found - download from Hugging Face
+    repo_id = config.get('huggingface', {}).get('repo_id')
+    if not repo_id:
+        raise RuntimeError(
+            f'Dataset not found at {dataset_path} and no Hugging Face repo configured. '
+            'Set huggingface.repo_id in config.yaml.'
+        )
+    
+    print(f'Dataset not found locally. Downloading from Hugging Face...')
+    
+    try:
+        from huggingface_hub import hf_hub_download
+        
+        # Create parent directories
+        dataset_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Download the zip file with progress bar
+        zip_path = hf_hub_download(
+            repo_id=repo_id,
+            filename='data/img_align_celeba.zip',
+            repo_type='model',
+            local_dir=dataset_path.parent.parent,
+            local_dir_use_symlinks=False
+        )
+        
+        print('Extracting dataset...')
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(dataset_path.parent)
+        
+        # Verify extraction
+        image_count = len(list(dataset_path.glob('*.jpg')))
+        if image_count == 0:
+            raise RuntimeError('Dataset extraction failed - no images found')
+        
+        print(f'Dataset ready ({image_count:,} images)')
+        return True
+        
+    except ImportError:
+        raise RuntimeError(
+            'huggingface_hub not installed. Install with: pip install huggingface-hub'
+        )
+    except Exception as e:
+        raise RuntimeError(f'Failed to download dataset: {e}')
+
+
 def save_generated_images(
     images: torch.Tensor,
     output_path: str,

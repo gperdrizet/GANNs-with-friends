@@ -18,7 +18,7 @@ from utils import (
     load_config, build_db_url, get_device,
     apply_gradients, weighted_average_gradients,
     save_generated_images, print_training_stats,
-    push_to_huggingface
+    push_to_huggingface, ensure_dataset_available
 )
 
 
@@ -44,8 +44,10 @@ class MainCoordinator:
         # Setup device
         self.device = get_device(gpu_id)
         
+        # Ensure dataset is available (download from HF if needed)
+        ensure_dataset_available(self.config)
+        
         # Load dataset to get size
-        print('Loading dataset...')
         dataset = CelebADataset(
             root_dir=self.config['data']['dataset_path'],
             image_size=self.config['training']['image_size']

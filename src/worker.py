@@ -18,7 +18,7 @@ from database.db_manager import DatabaseManager
 from utils import (
     load_config, build_db_url, get_device, get_gpu_name, 
     get_hostname, generate_worker_id, compute_gradient_dict,
-    print_training_stats
+    print_training_stats, ensure_dataset_available
 )
 
 
@@ -52,8 +52,10 @@ class Worker:
         # Get batch size from config
         self.batch_size = self.config['training']['batch_size']
         
+        # Ensure dataset is available (download from HF if needed)
+        ensure_dataset_available(self.config)
+        
         # Load dataset
-        print('Loading dataset...')
         self.dataset = CelebADataset(
             root_dir=self.config['data']['dataset_path'],
             image_size=self.config['training']['image_size']

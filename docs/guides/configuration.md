@@ -194,27 +194,20 @@ Dataset settings.
 
 ```yaml
 data:
-  dataset_path: ./data/celeba
-  image_size: 64
-  normalize: true
+  dataset_path: data/celeba_torchvision/celeba/img_align_celeba
+  num_workers_dataloader: 4
 ```
 
 ### Options
 
-**`dataset_path`** (string, default: ./data/celeba)
-- Path to CelebA dataset
+**`dataset_path`** (string, default: data/celeba_torchvision/celeba/img_align_celeba)
+- Path to CelebA dataset images
+- If the dataset is not found at this path, it will be automatically downloaded from Hugging Face
 - Can be relative or absolute
-- Must contain img_align_celeba folder
 
-**`image_size`** (integer, default: 64)
-- Image resolution (square)
-- Must be power of 2
-- Typical: 32, 64, 128
-
-**`normalize`** (boolean, default: true)
-- Normalize images to [-1, 1]
-- Required for DCGAN
-- Keep as true
+**`num_workers_dataloader`** (integer, default: 4)
+- Number of dataloader workers for parallel data loading
+- Set to 0 to disable multiprocessing
 
 ## Hugging Face configuration
 

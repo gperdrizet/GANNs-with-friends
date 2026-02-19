@@ -32,16 +32,16 @@ This project demonstrates distributed machine learning by:
 
 ## Documentation
 
-**[Full documentation](https://gperdrizet.github.io/GANNs-with-freinds)**
+**[Full documentation](https://gperdrizet.github.io/GANNs-with-friends)**
 
 Quick links:
-- [Getting Started](https://gperdrizet.github.io/GANNs-with-freinds/getting-started/overview.html) - Introduction and concepts
-- [Installation Guide](https://gperdrizet.github.io/GANNs-with-freinds/getting-started/installation.html) - Choose your setup path
-- [Student Guide](https://gperdrizet.github.io/GANNs-with-freinds/guides/students.html) - How to participate as a worker
-- [Instructor Guide](https://gperdrizet.github.io/GANNs-with-freinds/guides/instructors.html) - Running the coordinator
-- [Configuration Reference](https://gperdrizet.github.io/GANNs-with-freinds/guides/configuration.html) - All config options
-- [Architecture](https://gperdrizet.github.io/GANNs-with-freinds/architecture/overview.html) - System design details
-- [FAQ](https://gperdrizet.github.io/GANNs-with-freinds/resources/faq.html) - Frequently asked questions
+- [Getting Started](https://gperdrizet.github.io/GANNs-with-friends/getting-started/overview.html) - Introduction and concepts
+- [Installation Guide](https://gperdrizet.github.io/GANNs-with-friends/getting-started/installation.html) - Choose your setup path
+- [Student Guide](https://gperdrizet.github.io/GANNs-with-friends/guides/students.html) - How to participate as a worker
+- [Instructor Guide](https://gperdrizet.github.io/GANNs-with-friends/guides/instructors.html) - Running the coordinator
+- [Configuration Reference](https://gperdrizet.github.io/GANNs-with-friends/guides/configuration.html) - All config options
+- [Architecture](https://gperdrizet.github.io/GANNs-with-friends/architecture/overview.html) - System design details
+- [FAQ](https://gperdrizet.github.io/GANNs-with-friends/resources/faq.html) - Frequently asked questions
 
 ## Quick start
 
@@ -49,17 +49,17 @@ Choose your installation path:
 
 | Setup Path | Best For | GPU Required | Documentation |
 |------------|----------|--------------|---------------|
-| **Dev Container** † | Full development environment | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-freinds/setup/dev-container.html) |
-| **Native Python** | Direct local control | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-freinds/setup/native-python.html) |
-| **Conda** | Conda users | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-freinds/setup/conda.html) |
-| **Google Colab** | Zero installation, free GPU | No (provided) | [Setup guide](https://gperdrizet.github.io/GANNs-with-freinds/setup/google-colab.html) |
-| **Local Training** | Single GPU, no database | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-freinds/setup/local-training.html) |
+| **Dev Container** † | Full development environment | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-friends/setup/dev-container.html) |
+| **Native Python** | Direct local control | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-friends/setup/native-python.html) |
+| **Conda** | Conda users | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-friends/setup/conda.html) |
+| **Google Colab** | Zero installation, free GPU | No (provided) | [Setup guide](https://gperdrizet.github.io/GANNs-with-friends/setup/google-colab.html) |
+| **Local Training** | Single GPU, no database | Optional | [Setup guide](https://gperdrizet.github.io/GANNs-with-friends/setup/local-training.html) |
 
 † Recommended configuration
 
-- **New to the project?** Start with the [Getting Started Guide](https://gperdrizet.github.io/GANNs-with-freinds/getting-started/overview.html).
-- **For students:** See the [Student Guide](https://gperdrizet.github.io/GANNs-with-freinds/guides/students.html) for how to participate as a worker.
-- **For instructors:** See the [Instructor Guide](https://gperdrizet.github.io/GANNs-with-freinds/guides/instructors.html) for running the coordinator and managing training.
+- **New to the project?** Start with the [Getting Started Guide](https://gperdrizet.github.io/GANNs-with-friends/getting-started/overview.html).
+- **For students:** See the [Student Guide](https://gperdrizet.github.io/GANNs-with-friends/guides/students.html) for how to participate as a worker.
+- **For instructors:** See the [Instructor Guide](https://gperdrizet.github.io/GANNs-with-friends/guides/instructors.html) for running the coordinator and managing training.
 
 ## Features
 
@@ -81,7 +81,7 @@ This is an educational project! Contributions welcome:
 - Additional GAN architectures
 - Gradient compression techniques
 
-See the [Contributing Guide](https://gperdrizet.github.io/GANNs-with-freinds/resources/contributing.html) for more details.
+See the [Contributing Guide](https://gperdrizet.github.io/GANNs-with-friends/resources/contributing.html) for more details.
 
 ## License
 

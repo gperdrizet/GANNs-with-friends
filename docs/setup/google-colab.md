@@ -24,7 +24,7 @@ Run the project on Google Colab with zero local installation required.
 1. Go to [Google Colab](https://colab.research.google.com/)
 2. Click **File > Open notebook**
 3. Select the **GitHub** tab
-4. Enter: `gperdrizet/GANNs-with-freinds`
+4. Enter: `gperdrizet/GANNs-with-friends`
 5. Select: `notebooks/run_worker_colab.ipynb`
 
 ### 2. Enable GPU runtime
@@ -42,11 +42,11 @@ Execute the cells in order:
 ```python
 # Clone repository if not already present
 import os
-if not os.path.exists('GANNs-with-freinds'):
-    !git clone https://github.com/gperdrizet/GANNs-with-freinds.git
-    %cd GANNs-with-freinds
+if not os.path.exists('GANNs-with-friends'):
+    !git clone https://github.com/gperdrizet/GANNs-with-friends.git
+    %cd GANNs-with-friends
 else:
-    %cd GANNs-with-freinds
+    %cd GANNs-with-friends
     !git pull
 ```
 
@@ -55,16 +55,9 @@ else:
 !pip install -q -r requirements.txt
 ```
 
-**Cell 3: Download dataset**
-```python
-!python scripts/download_celeba.py
-```
-
-This downloads ~1.3 GB of celebrity face images.
-
 ### 4. Configure database connection
 
-**Cell 4: Create config file**
+**Cell 3: Create config file**
 ```python
 if not os.path.exists('config.yaml'):
     !cp config.yaml.template config.yaml
@@ -74,7 +67,7 @@ else:
     print('config.yaml already exists')
 ```
 
-**Cell 5: Edit credentials**
+**Cell 4: Edit credentials**
 
 Click the folder icon in the left sidebar, find `config.yaml`, and edit:
 
@@ -89,19 +82,21 @@ database:
 
 ### 5. Start worker
 
-**Cell 6: Run worker**
+**Cell 5: Run worker**
 ```python
 !python src/worker.py
 ```
 
+On first run, the dataset will be automatically downloaded from Hugging Face (~1.4 GB).
+
 You should see:
 ```
 Initializing worker...
-Loading dataset...
-Initializing models...
+Dataset not found locally. Downloading from Hugging Face...
+Extracting dataset...
+Dataset ready (202,599 images)
 Worker abc123 initialized successfully!
 GPU: Tesla T4
-Dataset size: 202,599 images
 Polling for work...
 ```
 

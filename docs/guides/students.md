@@ -67,11 +67,9 @@ You just start it and let it run!
 
 ```
 Initializing worker...
-Loading dataset...
-Initializing models...
+Dataset found locally (202,599 images)
 Worker abc123 initialized successfully!
 GPU: NVIDIA GeForce RTX 3080
-Dataset size: 202,599 images
 Polling for work...
 
 Processing work unit 42 (iteration 5)...
@@ -93,12 +91,12 @@ Processing work unit 43 (iteration 5)...
 ```
 Worker abc123 initialized successfully!
 GPU: NVIDIA GeForce RTX 3080
-Dataset size: 202,599 images
+Dataset found locally (202,599 images)
 ```
 
 - **Worker ID**: Unique identifier for your worker
 - **GPU**: Your hardware (or "CPU" if no GPU)
-- **Dataset size**: Total images available
+- **Dataset**: Shows if found locally or downloaded
 
 ### During training
 

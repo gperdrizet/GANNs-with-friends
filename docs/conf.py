@@ -52,7 +52,7 @@ html_theme_options = {
 html_context = {
     'display_github': True,
     'github_user': 'gperdrizet',
-    'github_repo': 'GANNs-with-freinds',
+    'github_repo': 'GANNs-with-friends',
     'github_version': 'main',
     'conf_py_path': '/docs/',
 }

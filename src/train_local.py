@@ -16,7 +16,7 @@ from models.dcgan import Generator, Discriminator
 from data.dataset import CelebADataset
 from utils import (
     load_config, get_device, save_generated_images, 
-    print_training_stats, format_time
+    print_training_stats, format_time, ensure_dataset_available
 )
 
 
@@ -344,6 +344,9 @@ def main():
     """Main entry point."""
     # Load config first to use as defaults
     config = load_config('config.yaml')
+    
+    # Ensure dataset is available (download from HF if needed)
+    ensure_dataset_available(config)
     
     parser = argparse.ArgumentParser(description='Local DCGAN Training')
     

@@ -23,10 +23,7 @@ See [installation guide](../getting-started/installation.md) for details.
 
 ### Do I need to download the dataset?
 
-Yes. The CelebA dataset (~1.4 GB) is required. Run:
-```bash
-python scripts/download_celeba.py
-```
+No, the CelebA dataset (~1.4 GB) is downloaded automatically from Hugging Face the first time you run the worker or coordinator. Just make sure you have enough disk space and internet access.
 
 ### Where do I get database credentials?
 
