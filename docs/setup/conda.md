@@ -171,7 +171,7 @@ conda env remove -n ganns-with-friends
 
 Includes:
 - Python 3.10
-- PyTorch with CUDA 11.8
+- PyTorch with CUDA 12.6
 - torchvision with GPU support
 - PIL, PyYAML, psycopg2
 - huggingface-hub (via pip)
@@ -196,7 +196,7 @@ Same as above but:
 **CUDA version mismatch:**
 - Check your driver: `nvidia-smi`
 - Adjust CUDA version in `environment.yml`
-- Available versions: 11.6, 11.7, 11.8, 12.1
+- Available versions: 11.8, 12.1, 12.4, 12.6
 
 **Database module errors:**
 - Install separately: `conda install psycopg2`

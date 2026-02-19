@@ -27,8 +27,8 @@ python --version
 nvidia-smi
 
 # Install matching PyTorch
-# For CUDA 11.8:
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+# For CUDA 12.6:
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 
 # For CPU-only:
 pip install -r .devcontainer/cpu/requirements.txt

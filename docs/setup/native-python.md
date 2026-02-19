@@ -45,6 +45,7 @@ python -m venv .venv
 ```
 
 .. note::
+
    On some systems, you may need to use `python3` to invoke the Python interpreter
 
 Activate the environment:
@@ -61,7 +62,7 @@ You should see `(.venv)` in your prompt.
 
 ### 4. Install dependencies
 
-**With GPU (CUDA 11.8):**
+**With GPU (CUDA 12.6):**
 ```bash
 pip install -r requirements.txt
 ```

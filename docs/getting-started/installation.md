@@ -6,10 +6,11 @@ Choose the installation path that best fits your setup and experience level.
 
 | Path | GPU required | Docker required | Installation time | Best for |
 |------|--------------|-----------------|-------------------|----------|
-| **Google Colab** | No (free GPU provided) | No | 2 minutes | Quick start, no local setup |
-| **Dev container** | Recommended | Yes | 10 minutes | Full development |
-| **Native Python** | Optional | No | 5 minutes | Direct control |
-| **Conda** | Optional | No | 5 minutes | Conda users |
+| [Google Colab](../setup/google-colab.md) | No (free GPU provided) | No | 2 minutes | Quick start, no local setup |
+| [Dev container](../setup/dev-container.md) | Recommended | Yes | 10 minutes | Full development |
+| [Native Python](../setup/native-python.md) | Optional | No | 5 minutes | Direct control |
+| [Conda](../setup/conda.md) | Optional | No | 5 minutes | Conda users |
+| [Local training](../setup/local-training.md) | Optional | No | 5 minutes | Single GPU, no database |
 
 ## Prerequisites by path
 
@@ -51,16 +52,6 @@ Most paths support both CPU and GPU:
 **CPU training**: Works but slower
 
 The worker automatically detects your hardware. If you encounter out-of-memory errors, reduce `batch_size` in config.yaml.
-
-## Quick links
-
-Jump directly to your chosen installation method:
-
-- [Google Colab setup](../setup/google-colab.md)
-- [Dev container setup](../setup/dev-container.md)
-- [Native Python setup](../setup/native-python.md)
-- [Conda setup](../setup/conda.md)
-- [Local training (no database)](../setup/local-training.md)
 
 ## Verification
 
