@@ -3,6 +3,8 @@ Dataset loader for CelebA and other image datasets.
 """
 
 import os
+import io
+import zipfile
 from typing import List, Optional
 from pathlib import Path
 
@@ -13,7 +15,7 @@ from PIL import Image
 
 
 class CelebADataset(Dataset):
-    """CelebA dataset loader."""
+    """CelebA dataset loader - supports both extracted folders and zip files."""
     
     def __init__(
         self, 
@@ -24,12 +26,42 @@ class CelebADataset(Dataset):
         """Initialize CelebA dataset.
         
         Args:
-            root_dir: Root directory containing CelebA images
+            root_dir: Root directory containing CelebA images, OR path to zip file
             image_size: Target image size (images will be resized)
             transform: Optional transform to apply to images
         """
         self.root_dir = Path(root_dir)
         self.image_size = image_size
+        self.zip_file = None
+        self.zip_path = None
+        
+        # Check if we should load from a zip file
+        # Look for zip file in parent directory
+        possible_zip = self.root_dir.parent / 'img_align_celeba.zip'
+        if possible_zip.exists() and not self.root_dir.exists():
+            self._init_from_zip(possible_zip)
+        elif str(root_dir).endswith('.zip') and Path(root_dir).exists():
+            self._init_from_zip(Path(root_dir))
+        else:
+            self._init_from_folder()
+        
+        # Default transform if none provided
+        if transform is None:
+            self.transform = transforms.Compose([
+                transforms.Resize(image_size),
+                transforms.CenterCrop(image_size),
+                transforms.ToTensor(),
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize to [-1, 1]
+            ])
+        else:
+            self.transform = transform
+        
+        print(f'Loaded dataset with {len(self.image_files)} images')
+    
+    def _init_from_folder(self):
+        """Initialize from extracted folder."""
+        self.loading_from_zip = False
+        self._zip_handle = None  # Not used for folder loading
         
         # Find all image files
         self.image_files = sorted([
@@ -45,20 +77,32 @@ class CelebADataset(Dataset):
             ])
         
         if not self.image_files:
-            raise ValueError(f'No image files found in {root_dir}')
+            raise ValueError(f'No image files found in {self.root_dir}')
+    
+    def _init_from_zip(self, zip_path: Path):
+        """Initialize from zip file without extracting."""
+        self.loading_from_zip = True
+        self.zip_path = str(zip_path)  # Store as string for pickling
+        self._zip_handle = None  # Lazy-loaded, per-process
         
-        # Default transform if none provided
-        if transform is None:
-            self.transform = transforms.Compose([
-                transforms.Resize(image_size),
-                transforms.CenterCrop(image_size),
-                transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))  # Normalize to [-1, 1]
+        print(f'Loading dataset directly from zip: {zip_path}')
+        print('(No extraction needed - this saves disk I/O)')
+        
+        # Open zip temporarily just to get the file list
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            self.image_files = sorted([
+                name for name in zf.namelist()
+                if name.endswith('.jpg') or name.endswith('.png')
             ])
-        else:
-            self.transform = transform
         
-        print(f'Loaded dataset with {len(self.image_files)} images')
+        if not self.image_files:
+            raise ValueError(f'No image files found in {zip_path}')
+    
+    def _get_zip_handle(self):
+        """Get zip file handle, opening lazily for multiprocessing support."""
+        if self._zip_handle is None:
+            self._zip_handle = zipfile.ZipFile(self.zip_path, 'r')
+        return self._zip_handle
     
     def __len__(self):
         return len(self.image_files)
@@ -72,8 +116,15 @@ class CelebADataset(Dataset):
         Returns:
             Transformed image tensor and index
         """
-        img_path = self.image_files[idx]
-        image = Image.open(img_path).convert('RGB')
+        if self.loading_from_zip:
+            # Read from zip file (lazy-open for multiprocessing)
+            zf = self._get_zip_handle()
+            img_data = zf.read(self.image_files[idx])
+            image = Image.open(io.BytesIO(img_data)).convert('RGB')
+        else:
+            # Read from disk
+            img_path = self.image_files[idx]
+            image = Image.open(img_path).convert('RGB')
         
         if self.transform:
             image = self.transform(image)
