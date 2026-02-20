@@ -104,7 +104,7 @@ Edit `config.yaml` with your database credentials:
 ```yaml
 database:
   host: YOUR_DATABASE_HOST
-  port: 5432
+  port: 54321
   database: distributed_gan
   user: YOUR_USERNAME
   password: YOUR_PASSWORD
@@ -121,13 +121,17 @@ On first run, the dataset will be automatically downloaded from Hugging Face (~1
 Expected output:
 ```
 Initializing worker...
-Using GPU: NVIDIA GeForce RTX 3080
-# Or: Using CPU
+Using GPU 0: NVIDIA GeForce RTX 3080
+# Or: Using CPU (no CUDA available)
 Dataset not found locally. Downloading from Hugging Face...
-Extracting dataset...
-Dataset ready (202,599 images)
+Download complete: data/celeba_torchvision/data/img_align_celeba.zip
+Images will be loaded directly from zip (no extraction needed)
+Loaded dataset with 202599 images
 Worker abc123 initialized successfully!
-Polling for work...
+Name: YourName
+GPU: NVIDIA GeForce RTX 3080
+Batch size: 32
+Waiting for work units...
 ```
 
 ## Managing the environment
@@ -171,13 +175,12 @@ The worker automatically detects your hardware:
 
 **With GPU:**
 - Uses CUDA for acceleration
-- Default batch size (32)
 - Faster training
 
 **With CPU:**
 - Falls back to CPU automatically
-- Smaller batch size (8)
 - Slower but works without GPU
+- Consider reducing batch_size in config.yaml if needed
 
 ## Troubleshooting
 

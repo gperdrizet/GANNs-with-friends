@@ -74,7 +74,7 @@ Click the folder icon in the left sidebar, find `config.yaml`, and edit:
 ```yaml
 database:
   host: YOUR_DATABASE_HOST      # From instructor
-  port: 5432
+  port: 54321
   database: distributed_gan
   user: YOUR_USERNAME           # From instructor
   password: YOUR_PASSWORD       # From instructor
@@ -93,11 +93,14 @@ You should see:
 ```
 Initializing worker...
 Dataset not found locally. Downloading from Hugging Face...
-Extracting dataset...
-Dataset ready (202,599 images)
+Download complete: data/celeba_torchvision/data/img_align_celeba.zip
+Images will be loaded directly from zip (no extraction needed)
+Loaded dataset with 202599 images
 Worker abc123 initialized successfully!
+Name: YourName
 GPU: Tesla T4
-Polling for work...
+Batch size: 64
+Waiting for work units...
 ```
 
 ## Keeping the worker running

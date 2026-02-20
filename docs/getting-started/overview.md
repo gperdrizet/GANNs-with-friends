@@ -81,5 +81,6 @@ After completing this project, students understand:
 
 ## Next steps
 
+- [Background](background.md) - Deeper technical background on GANs and distributed training
 - [Installation](installation.md) - Set up your environment
 - [Quick start](quick-start.md) - Get running in 5 minutes

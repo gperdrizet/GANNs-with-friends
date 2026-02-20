@@ -403,13 +403,17 @@ class DatabaseManager:
             return None
     
     def update_training_state(self, **kwargs):
-        """Update training state fields."""
+        """Update training state fields. Creates record if it doesn't exist."""
         with self.get_session() as session:
             state = session.query(TrainingState).filter(TrainingState.id == 1).first()
-            if state:
-                for key, value in kwargs.items():
-                    if hasattr(state, key):
-                        setattr(state, key, value)
+            if not state:
+                # Create if doesn't exist
+                state = TrainingState(id=1)
+                session.add(state)
+            
+            for key, value in kwargs.items():
+                if hasattr(state, key):
+                    setattr(state, key, value)
     
     # ==================== Workers ====================
     

@@ -8,10 +8,12 @@ These performance improvements work out-of-the-box by adjusting `config.yaml`.
 
 ### Batch Size Tuning
 
+Workers can adjust batch size independently based on their hardware:
+
 **GPU workers:**
 ```yaml
-training:
-  batch_size: 128  # Increase for better GPU utilization (watch for OOM)
+worker:
+  batch_size: 64  # Increase for better GPU utilization (watch for OOM)
 ```
 
 **Check GPU utilization in a separate terminal:**
@@ -23,8 +25,8 @@ watch -n 1 nvidia-smi
 
 **CPU workers:**
 ```yaml
-training:
-  batch_size: 32  # Can match GPU batch size
+worker:
+  batch_size: 16  # Reduce to avoid memory issues
 ```
 
 ### DataLoader Workers
@@ -45,18 +47,18 @@ Balance database overhead vs. processing efficiency:
 
 ```yaml
 training:
-  batches_per_work_unit: 10  # Images per work unit = batch_size × this value
+  images_per_work_unit: 320  # Images assigned per work unit
   num_workunits_per_update: 3  # How many work unit gradients before updating
 ```
 
 **Trade-offs:**
-- **Larger `batches_per_work_unit`** (15-20):
+- **Larger `images_per_work_unit`** (500-1000):
   - Less database overhead
   - Fewer work units to manage
   - Longer to process each work unit
   - Slower feedback if workers disconnect
 
-- **Smaller `batches_per_work_unit`** (5-10):
+- **Smaller `images_per_work_unit`** (100-200):
   - Faster work unit completion
   - Better for unstable workers
   - More database operations
@@ -133,9 +135,9 @@ If work units take too long to claim or complete:
 ## Example configurations
 
 **Note:** Default settings in `config.yaml.template`:
-- `batch_size: 32`
-- `batches_per_work_unit: 10`
+- `images_per_work_unit: 320`
 - `num_workunits_per_update: 3`
+- `batch_size: 32` (in worker section)
 - `num_workers_dataloader: 4`
 - `poll_interval: 5`
 
@@ -144,33 +146,33 @@ These examples show how to adjust for different class sizes:
 ### Small class (3-5 workers)
 ```yaml
 training:
-  batch_size: 64
-  batches_per_work_unit: 10
+  images_per_work_unit: 320
   num_workunits_per_update: 2
 
 worker:
+  batch_size: 64  # Workers tune based on their GPU
   poll_interval: 5
 ```
 
 ### Medium class (10-20 workers)
 ```yaml
 training:
-  batch_size: 128
-  batches_per_work_unit: 15
+  images_per_work_unit: 480
   num_workunits_per_update: 8
 
 worker:
+  batch_size: 64  # Workers tune based on their GPU
   poll_interval: 8
 ```
 
 ### Large class (30+ workers)
 ```yaml
 training:
-  batch_size: 128
-  batches_per_work_unit: 20
+  images_per_work_unit: 640
   num_workunits_per_update: 15
 
 worker:
+  batch_size: 64  # Workers tune based on their GPU
   poll_interval: 10
 ```
 

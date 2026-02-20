@@ -31,7 +31,7 @@ Connection settings for PostgreSQL database.
 ```yaml
 database:
   host: localhost
-  port: 5432
+  port: 54321
   database: distributed_gan
   user: username
   password: password
@@ -44,9 +44,9 @@ database:
 - Can be IP address or hostname
 - Examples: `localhost`, `db.example.com`, `192.168.1.100`
 
-**`port`** (integer, default: 5432)
+**`port`** (integer, default: 54321)
 - PostgreSQL port number
-- Standard PostgreSQL port is 5432
+- Standard PostgreSQL port is 5432, but this project uses 54321 by default
 
 **`database`** (string, required)
 - Database name
@@ -62,48 +62,44 @@ database:
 
 ## Training configuration
 
-Hyperparameters for training process.
+Hyperparameters for training process (coordinator only).
 
 ```yaml
 training:
-  batch_size: 32
-  batches_per_work_unit: 10
-  num_workers_per_update: 3
-  learning_rate_g: 0.0002
-  learning_rate_d: 0.0002
+  latent_dim: 100
+  image_size: 64
+  images_per_work_unit: 320
+  num_workunits_per_update: 3
+  learning_rate: 0.0002
   beta1: 0.5
   beta2: 0.999
-  num_epochs: 50
 ```
 
 ### Options
 
-**`batch_size`** (integer, default: 32)
-- Number of images per batch
-- Larger = more stable but more memory
-- Typical range: 16-128
-- Reduce if you encounter out-of-memory errors
+**`latent_dim`** (integer, default: 100)
+- Dimension of generator input noise vector
+- Standard DCGAN uses 100
 
-**`batches_per_work_unit`** (integer, default: 10)
-- How many batches in each work unit
-- Each work unit = batch_size × batches_per_work_unit images
+**`image_size`** (integer, default: 64)
+- Output image size (64x64 pixels)
+- Must match model architecture
+
+**`images_per_work_unit`** (integer, default: 320)
+- Number of images assigned to each work unit
+- Workers process this many images before uploading gradients
 - Larger = less database overhead, more work per claim
 
 **`num_workunits_per_update`** (integer, default: 3)
 - Wait for N work unit gradients before aggregating and updating models
 - Higher = more gradient samples, better convergence, slower updates
 - Lower = faster iteration, but potentially noisier gradients
-- Should be set based on your total number of workers and dataset size
+- Should be set based on your total number of workers
 
-**`learning_rate_g`** (float, default: 0.0002)
-- Generator learning rate
+**`learning_rate`** (float, default: 0.0002)
+- Adam optimizer learning rate for both generator and discriminator
 - Lower = more stable, slower learning
 - Typical range: 0.0001-0.0004
-
-**`learning_rate_d`** (float, default: 0.0002)
-- Discriminator learning rate
-- Often same as generator
-- Can tune independently
 
 **`beta1`** (float, default: 0.5)
 - Adam optimizer beta1 parameter
@@ -115,28 +111,34 @@ training:
 - Controls variance
 - Usually keep at 0.999
 
-**`num_epochs`** (integer, default: 50)
-- Total epochs to train
-- One epoch = all images seen once
-- More epochs = longer training
-
 ## Worker configuration
 
 Settings for worker behavior.
 
 ```yaml
 worker:
+  name: YourName
+  batch_size: 32
   poll_interval: 5
   heartbeat_interval: 30
   work_unit_timeout: 300
-  max_retries: 3
-  num_workers_dataloader: 4
 ```
 
 ### Options
 
+**`name`** (string, optional)
+- Your name or identifier shown on the dashboard leaderboard
+- If not set, uses hostname
+- Great for classroom competitions!
+
+**`batch_size`** (integer, default: 32)
+- Number of images per training batch
+- Adjust based on your GPU memory
+- Colab T4 can typically handle 64
+- Reduce if you get out-of-memory errors
+
 **`poll_interval`** (integer, default: 5)
-- Seconds between database polls
+- Seconds between database polls when no work is available
 - Lower = more responsive, more database load
 - Typical range: 1-10
 
@@ -150,25 +152,14 @@ worker:
 - Should exceed normal processing time
 - Typical range: 120-600
 
-**`max_retries`** (integer, default: 3)
-- Max attempts to process a work unit
-- Prevents infinite retry on bad data
-- Typical range: 3-5
-
-**`num_workers_dataloader`** (integer, default: 4)
-- PyTorch DataLoader worker processes
-- Higher = faster data loading, more memory
-- Set to 0 for debugging
-
 ## Model configuration
 
-Model architecture parameters.
+Model architecture parameters (set in training section).
 
 ```yaml
-model:
+training:
   latent_dim: 100
-  generator_features: 64
-  discriminator_features: 64
+  image_size: 64
 ```
 
 ### Options
@@ -272,29 +263,43 @@ The distributed training system coordinates multiple workers through work units 
 
 ### Work unit size vs. database overhead
 
-**`batches_per_work_unit`** controls how many batches of training data each work unit contains:
+**`images_per_work_unit`** controls how many images each work unit contains:
 
 ```yaml
 training:
-  batch_size: 32
-  batches_per_work_unit: 10  # Each work unit = 32 × 10 = 320 images
+  images_per_work_unit: 320  # Each work unit = 320 images
 ```
 
-**Larger work units (15-20 batches):**
+**Larger work units (500-1000 images):**
 - Less database overhead (fewer queries per epoch)
 - Fewer work units to manage
 - Better for stable, persistent workers
 - Longer processing time per work unit
 - Slower feedback if workers disconnect
 
-**Smaller work units (5-10 batches):**
+**Smaller work units (100-200 images):**
 - Faster completion times
 - Better for unstable workers (less wasted work if disconnected)
 - More granular progress tracking
 - More database operations
 - Higher coordination overhead with many workers
 
-**Recommendation:** Start with 10, increase if you have stable workers or high database latency.
+**Recommendation:** Start with 320, increase if you have stable workers or high database latency.
+
+### Worker batch size
+
+Workers can tune their own `batch_size` based on GPU memory:
+
+```yaml
+worker:
+  batch_size: 64  # Larger for GPUs with more VRAM
+```
+
+This is independent of `images_per_work_unit`. A work unit with 320 images:
+- Worker with batch_size=32: processes 10 batches
+- Worker with batch_size=64: processes 5 batches
+
+Both contribute equally (gradients are averaged).
 
 ### Aggregation threshold vs. gradient quality
 
@@ -353,10 +358,10 @@ The system automatically cancels pending work units when advancing iterations to
 The actual update frequency depends on both parameters:
 
 ```
-Images per update = batch_size × batches_per_work_unit × num_workunits_per_update
+Images per update = images_per_work_unit × num_workunits_per_update
 
 Example with defaults:
-32 × 10 × 5 = 1,600 images per model update
+320 × 3 = 960 images per model update
 ```
 
 **More frequent updates (fewer images):**
@@ -376,7 +381,7 @@ Example with defaults:
 1. Start with defaults for your class size
 2. Monitor training metrics (loss, sample quality)
 3. If training is unstable: increase `num_workunits_per_update`
-4. If training is too slow: decrease `num_workunits_per_update` or `batches_per_work_unit`
+4. If training is too slow: decrease `num_workunits_per_update` or `images_per_work_unit`
 5. Adjust based on worker reliability and network conditions
 
 ### Worker coordination patterns
@@ -385,8 +390,9 @@ Different parameter combinations create different worker coordination patterns:
 
 **Pattern 1: Fast iteration (testing)**
 ```yaml
-batches_per_work_unit: 5
-num_workunits_per_update: 1
+training:
+  images_per_work_unit: 160
+  num_workunits_per_update: 1
 ```
 - Single worker can drive training
 - Fast feedback, noisy gradients
@@ -394,17 +400,19 @@ num_workunits_per_update: 1
 
 **Pattern 2: Balanced (small/medium class)**
 ```yaml
-batches_per_work_unit: 10
-num_workunits_per_update: 5
+training:
+  images_per_work_unit: 320
+  num_workunits_per_update: 3
 ```
-- 5 workers contribute per update
+- 3 workers contribute per update
 - Good balance of quality and speed
 - Default configuration
 
 **Pattern 3: High quality (large class)**
 ```yaml
-batches_per_work_unit: 15
-num_workunits_per_update: 15
+training:
+  images_per_work_unit: 480
+  num_workunits_per_update: 10
 ```
 - Wait for many gradient samples
 - Best gradient quality
@@ -439,51 +447,52 @@ Watch these metrics to tune your configuration:
 
 ```yaml
 training:
+  images_per_work_unit: 320
+  num_workunits_per_update: 2
+
+worker:
   batch_size: 64
-  batches_per_work_unit: 5
-  num_workers_per_update: 2
-  num_epochs: 30
 ```
 
 ### Large class (10+ students)
 
 ```yaml
 training:
+  images_per_work_unit: 480
+  num_workunits_per_update: 5
+
+worker:
   batch_size: 32
-  batches_per_work_unit: 10
-  num_workers_per_update: 5
-  num_epochs: 50
 ```
 
 ### CPU-only mode
 
 ```yaml
-training:
-  batch_size: 8
-  batches_per_work_unit: 5
-  num_workers_per_update: 3
+worker:
+  batch_size: 16
 ```
 
 ### Quick testing
 
 ```yaml
 training:
+  images_per_work_unit: 160
+  num_workunits_per_update: 1
+
+worker:
   batch_size: 16
-  batches_per_work_unit: 2
-  num_workers_per_update: 1
-  num_epochs: 5
 ```
 
 ### High quality (long training)
 
 ```yaml
 training:
+  images_per_work_unit: 640
+  num_workunits_per_update: 10
+  learning_rate: 0.0001
+
+worker:
   batch_size: 64
-  batches_per_work_unit: 10
-  num_workers_per_update: 5
-  num_epochs: 200
-  learning_rate_g: 0.0001
-  learning_rate_d: 0.0001
 ```
 
 ## Environment variables

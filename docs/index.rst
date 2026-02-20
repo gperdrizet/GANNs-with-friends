@@ -131,6 +131,7 @@ The concepts you learn here (gradient aggregation, fault tolerance, work distrib
    :caption: Getting started
 
    getting-started/overview
+   getting-started/background
    getting-started/installation
    getting-started/quick-start
 

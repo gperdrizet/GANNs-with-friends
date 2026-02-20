@@ -33,6 +33,7 @@ source_suffix = {
 myst_enable_extensions = [
     'colon_fence',  # ::: code blocks
     'deflist',      # Definition lists
+    'dollarmath',   # $$ and $ math delimiters
 ]
 
 # HTML output options

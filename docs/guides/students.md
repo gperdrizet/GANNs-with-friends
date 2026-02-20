@@ -54,7 +54,8 @@ Add your name to `config.yaml` so you appear on the dashboard leaderboard:
 
 ```yaml
 worker:
-  name: Alice  # Your name here!
+  name: Alice       # Your name here!
+  batch_size: 32    # Increase to 64 if you have more GPU memory
   poll_interval: 5
 ```
 
@@ -79,21 +80,25 @@ You just start it and let it run!
 
 ```
 Initializing worker...
-Dataset found locally (202,599 images)
+Loaded dataset with 202599 images
 Worker abc123 initialized successfully!
 Name: Alice
 GPU: NVIDIA GeForce RTX 3080
-Polling for work...
+Batch size: 32
+CPU cores: 8
+RAM: 16.0 GB
+GPU VRAM: 10.0 GB
+Waiting for work units...
 
-Processing work unit 42 (iteration 5)...
-Loaded generator weights (iteration 5)
-Loaded discriminator weights (iteration 5)
-Processing batch 1/10...
-Processing batch 2/10...
-...
-Completed work unit 42 in 15.3s
+Processing work unit 42 (iteration 5)
+Number of images: 320
+Completed 10 batches (320 images)
+G_loss: 2.345 | D_loss: 1.234 | D_real: 85.00% | D_fake: 80.00%
+Extracting gradients...
+Uploading gradients...
+Work unit 42 completed successfully!
 
-Processing work unit 43 (iteration 5)...
+Processing work unit 43 (iteration 5)
 ...
 ```
 
@@ -105,34 +110,33 @@ Processing work unit 43 (iteration 5)...
 Worker abc123 initialized successfully!
 Name: Alice
 GPU: NVIDIA GeForce RTX 3080
-Dataset found locally (202,599 images)
+Batch size: 32
+CPU cores: 8
+RAM: 16.0 GB
+Dataset size: 202599
 ```
 
 - **Worker ID**: Unique identifier for your worker
 - **Name**: Your name (from config, or hostname if not set)
 - **GPU**: Your hardware (or "CPU" if no GPU)
-- **Dataset**: Shows if found locally or downloaded
+- **Batch size**: Images per training batch (from your config)
+- **System info**: CPU cores, RAM, GPU VRAM (shown on dashboard)
 
 ### During training
 
 ```
-Processing work unit 42 (iteration 5)...
-Completed work unit 42 in 15.3s
-Processed 320 images total
+Processing work unit 42 (iteration 5)
+Number of images: 320
+Completed 10 batches (320 images)
+G_loss: 2.345 | D_loss: 1.234 | D_real: 85.00% | D_fake: 80.00%
+Work unit 42 completed successfully!
 ```
 
 - **Work unit**: Unique batch assignment
 - **Iteration**: Current training iteration
-- **Time**: How long processing took
-- **Total images**: Cumulative contribution
-
-### Heartbeat
-
-```
-Heartbeat sent
-```
-
-Periodic check-in to show you're still active.
+- **Images**: How many images this work unit contains
+- **Losses**: Training loss values (lower is generally better)
+- **Accuracy**: How well discriminator distinguishes real/fake
 
 ## Monitoring your contribution
 

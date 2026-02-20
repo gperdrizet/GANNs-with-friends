@@ -101,7 +101,7 @@ Edit `config.yaml` with your database credentials:
 ```yaml
 database:
   host: YOUR_DATABASE_HOST
-  port: 5432
+  port: 54321
   database: distributed_gan
   user: YOUR_USERNAME
   password: YOUR_PASSWORD
@@ -118,19 +118,25 @@ On first run, the dataset will be automatically downloaded from Hugging Face (~1
 **GPU configuration output:**
 ```
 Initializing worker...
-Using GPU: NVIDIA GeForce RTX 3080
-Dataset found locally (202,599 images)
+Using GPU 0: NVIDIA GeForce RTX 3080
+Loaded dataset with 202599 images
 Worker abc123 initialized successfully!
-Polling for work...
+Name: YourName
+GPU: NVIDIA GeForce RTX 3080
+Batch size: 32
+Waiting for work units...
 ```
 
 **CPU configuration output:**
 ```
 Initializing worker...
-Using CPU
-Dataset found locally (202,599 images)
+Using CPU (no CUDA available)
+Loaded dataset with 202599 images
 Worker abc123 initialized successfully!
-Polling for work...
+Name: YourName
+GPU: CPU
+Batch size: 32
+Waiting for work units...
 ```
 
 ## Container features

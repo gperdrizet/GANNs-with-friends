@@ -2,6 +2,39 @@
 
 Understanding the system architecture of distributed GAN training.
 
+## Distributed deep learning fundamentals
+
+Training deep neural networks is computationally expensive. A single forward and backward pass through a model like ours requires ~2.6 billion floating-point operations per image. Multiply that by millions of images and hundreds of epochs, and you're looking at days or weeks of training on a single GPU.
+
+**Distributed training** solves this by spreading the work across multiple machines. The key insight: gradient computation is embarrassingly parallel - each worker can process different images independently.
+
+### Data parallelism
+
+Our system uses **data parallelism**, the most common distributed training strategy:
+
+1. Each worker has a complete copy of the model
+2. Workers process different subsets of the training data
+3. Workers compute gradients independently
+4. Gradients are averaged across workers
+5. All workers update to the same new weights
+
+This approach scales well because:
+- Adding workers increases throughput linearly
+- Communication overhead is proportional to model size, not data size
+- Workers don't need to communicate with each other (only with coordinator)
+
+### Synchronous vs asynchronous training
+
+**Synchronous** (our approach): Wait for N workers before updating weights
+- Pro: Deterministic, stable convergence
+- Con: Slowest worker limits throughput
+
+**Asynchronous**: Workers update weights independently
+- Pro: No waiting, maximum throughput
+- Con: Stale gradients, harder to converge
+
+We use **partial synchronization** - waiting for a threshold number of workers (not all). This balances consistency with fault tolerance.
+
 ## System components
 
 The system consists of four main components:
@@ -14,33 +47,51 @@ The system consists of four main components:
 ## High-level architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    Coordinator (Instructor)              │
-│  ┌────────────┐  ┌─────────────┐  ┌─────────────────┐  │
-│  │ Create     │  │  Aggregate  │  │   Update        │  │
-│  │ Work Units │→ │  Gradients  │→ │   Weights       │  │
-│  └────────────┘  └─────────────┘  └─────────────────┘  │
-│         │              ↑                    │            │
-└─────────┼──────────────┼────────────────────┼───────────┘
-          ↓              │                    ↓
-┌─────────────────────────────────────────────────────────┐
-│                PostgreSQL Database                       │
-│  ┌──────────┐  ┌──────────┐  ┌────────┐  ┌──────────┐ │
-│  │  Work    │  │ Gradients│  │Weights │  │ Training │ │
-│  │  Units   │  │          │  │        │  │  State   │ │
-│  └──────────┘  └──────────┘  └────────┘  └──────────┘ │
-└─────────┬──────────────┬────────────────────┬───────────┘
-          │              │                    │
-┌─────────┴──────┐  ┌────┴────────┐  ┌───────┴────────┐
-│  Worker 1      │  │  Worker 2   │  │  Worker N      │
-│  (Student GPU) │  │ (Student    │  │  (Student CPU) │
-│                │  │  GPU)       │  │                │
-│  ┌──────────┐  │  │ ┌──────────┐│  │ ┌──────────┐  │
-│  │ Compute  │  │  │ │ Compute  ││  │ │ Compute  │  │
-│  │ Gradients│  │  │ │ Gradients││  │ │ Gradients│  │
-│  └──────────┘  │  │ └──────────┘│  │ └──────────┘  │
-└────────────────┘  └─────────────┘  └────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                     Coordinator (Instructor)                     │
+│  ┌──────────────┐   ┌───────────────┐   ┌───────────────────┐  │
+│  │ Create Work  │   │   Aggregate   │   │  Optimizer Step   │  │
+│  │ Units (320   │ → │   Gradients   │ → │  & Save Weights   │  │
+│  │ images each) │   │ (wait for 3)  │   │  to Database      │  │
+│  └──────────────┘   └───────────────┘   └───────────────────┘  │
+│          │                  ↑                     │              │
+└──────────┼──────────────────┼─────────────────────┼─────────────┘
+           ↓                  │                     ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      PostgreSQL Database                         │
+│                     (perdrizet.org:54321)                        │
+│  ┌───────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │   Work    │  │ Gradients │  │  Model   │  │  Training    │  │
+│  │   Units   │  │ (per work │  │ Weights  │  │    State     │  │
+│  │ (pending/ │  │   unit)   │  │ (G + D)  │  │ (iteration,  │  │
+│  │ claimed)  │  │           │  │          │  │  epoch)      │  │
+│  └───────────┘  └───────────┘  └──────────┘  └──────────────┘  │
+└──────────┬──────────────┬───────────────────────┬───────────────┘
+           │              │                       │
+           │              │ (poll & claim)        │ (download weights)
+           ↓              ↓                       ↓
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│     Worker 1     │  │     Worker 2     │  │     Worker N     │
+│ (Student Laptop) │  │  (Colab GPU)     │  │ (Lab Computer)   │
+│                  │  │                  │  │                  │
+│ ┌──────────────┐ │  │ ┌──────────────┐ │  │ ┌──────────────┐ │
+│ │ Load images  │ │  │ │ Load images  │ │  │ │ Load images  │ │
+│ │ (from work   │ │  │ │ (from work   │ │  │ │ (from work   │ │
+│ │  unit)       │ │  │ │  unit)       │ │  │ │  unit)       │ │
+│ ├──────────────┤ │  │ ├──────────────┤ │  │ ├──────────────┤ │
+│ │ Forward pass │ │  │ │ Forward pass │ │  │ │ Forward pass │ │
+│ │ Backward pass│ │  │ │ Backward pass│ │  │ │ Backward pass│ │
+│ ├──────────────┤ │  │ ├──────────────┤ │  │ ├──────────────┤ │
+│ │ Upload grads │ │  │ │ Upload grads │ │  │ │ Upload grads │ │
+│ │ to database  │ │  │ │ to database  │ │  │ │ to database  │ │
+│ └──────────────┘ │  │ └──────────────┘ │  │ └──────────────┘ │
+└──────────────────┘  └──────────────────┘  └──────────────────┘
 ```
+
+**Key configuration parameters** (from `config.yaml`):
+- `images_per_work_unit`: 320 images assigned per work unit
+- `num_workunits_per_update`: 3 work units must complete before weight update
+- `worker.batch_size`: Each worker processes images in batches (default: 32)
 
 ## Data flow
 
@@ -48,23 +99,29 @@ The system consists of four main components:
 
 ```
 Coordinator starts
-├─> Initialize generator and discriminator
-├─> Save initial weights to database
-├─> Create work units for epoch 1
-│   └─> Each work unit = batch of image indices
-└─> Set training_state (iteration=0, epoch=1)
+├─> Initialize generator and discriminator with random weights
+├─> Apply DCGAN weight initialization (normal distribution)
+├─> Save initial weights to database (iteration 0)
+├─> Create work units for iteration 1
+│   └─> Each work unit = list of image indices (320 images)
+└─> Set training_state (iteration=1, epoch=1)
 ```
 
 ### 2. Worker claims and processes
 
 ```
 Worker polls database
-├─> Find unclaimed work unit
+├─> Find unclaimed work unit for current iteration
 ├─> Atomically claim it (FOR UPDATE SKIP LOCKED)
-├─> Download current model weights
-├─> Load assigned images from CelebA
-├─> Forward pass through models
-├─> Compute gradients
+├─> Download current model weights from database
+├─> Load assigned images from CelebA dataset
+├─> Process images in batches (batch_size from worker config)
+│   ├─> For each batch:
+│   │   ├─> Train discriminator on real images
+│   │   ├─> Train discriminator on fake images
+│   │   ├─> Train generator to fool discriminator
+│   │   └─> Accumulate gradients
+├─> Average accumulated gradients
 ├─> Upload gradients to database
 └─> Mark work unit as completed
 ```
@@ -72,16 +129,17 @@ Worker polls database
 ### 3. Coordinator aggregates
 
 ```
-Coordinator waits for N workers
-├─> Check completed work units
-├─> When N workers done:
-│   ├─> Download N gradient tensors
-│   ├─> Average gradients
-│   ├─> Apply optimizer step
-│   ├─> Update model weights
-│   ├─> Save new weights to database
+Coordinator waits for N work units (num_workunits_per_update)
+├─> Check completed work units for current iteration
+├─> When N work units done:
+│   ├─> Download gradient tensors from all N work units
+│   ├─> Weighted average gradients (by num_samples)
+│   ├─> Apply gradients to model parameters
+│   ├─> Run optimizer step (Adam)
+│   ├─> Save updated weights to database
+│   ├─> Cancel remaining pending work units (stale)
 │   ├─> Increment iteration counter
-│   └─> Create next batch of work units
+│   └─> Create work units for next iteration
 └─> Repeat until epoch complete
 ```
 

@@ -42,9 +42,9 @@ pip install -r .devcontainer/cpu/requirements.txt
 ```bash
 # Verify credentials in config.yaml
 # Test connection manually
-psql -h HOST -U USER -d DATABASE
+psql -h HOST -p 54321 -U USER -d DATABASE
 
-# Check firewall allows port 5432
+# Check firewall allows port 54321
 # Verify database is publicly accessible
 ```
 
@@ -57,7 +57,7 @@ psql -h HOST -U USER -d DATABASE
 **Solution**:
 ```yaml
 # Reduce batch size in config.yaml
-training:
+worker:
   batch_size: 16  # or 8
 
 # Close other GPU applications
@@ -122,10 +122,9 @@ worker:
 
 **Solution**:
 ```yaml
-# Reduce learning rates
+# Reduce learning rate
 training:
-  learning_rate_g: 0.0001
-  learning_rate_d: 0.0001
+  learning_rate: 0.0001
 
 # Check for bad gradients
 # Restart training from checkpoint
@@ -163,13 +162,12 @@ ls data/outputs/samples/
 
 **Solution**:
 ```yaml
-# Lower discriminator learning rate
+# Lower learning rate
 training:
-  learning_rate_g: 0.0002
-  learning_rate_d: 0.0001
+  learning_rate: 0.0001
 
-# Or increase generator learning rate
-# Common in GAN training
+# This affects both generator and discriminator
+# Common in GAN training - discriminator can overpower
 ```
 
 ## Database issues

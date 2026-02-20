@@ -68,14 +68,13 @@ Edit `config.yaml`:
 ```yaml
 database:
   host: your-database.provider.com
-  port: 5432
+  port: 54321
   database: distributed_gan
   user: coordinator  # Your admin account
   password: your_secure_password
 
 training:
-  batch_size: 32
-  batches_per_work_unit: 10 
+  images_per_work_unit: 320 
   num_workunits_per_update: 3  # Wait for N work units before updating
 
 huggingface:  # Optional but recommended for your own training runs
