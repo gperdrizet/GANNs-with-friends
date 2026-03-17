@@ -2,7 +2,7 @@
 
 # ==================== Database (all roles) ====================
 database:
-  host: YOUR_DATABASE_HOST
+  host: DATABASE_HOST
   port: 54321
   database: distributed_gan
   user: YOUR_DATABASE_USER

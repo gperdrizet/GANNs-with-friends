@@ -136,3 +136,17 @@ class Worker(Base):
     
     def __repr__(self):
         return f'<Worker(id={self.worker_id}, status={self.status})>'
+
+
+class SampleImage(Base):
+    """Stores generated sample images for viewing in dashboard."""
+    __tablename__ = 'sample_images'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    iteration = Column(Integer, nullable=False, unique=True, index=True)
+    epoch = Column(Integer, nullable=False)
+    image_blob = Column(LargeBinary, nullable=False)  # PNG image data
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    def __repr__(self):
+        return f'<SampleImage(iteration={self.iteration})>'

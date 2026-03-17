@@ -9,6 +9,7 @@ Usage:
 """
 
 import sys
+import io
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -174,12 +175,12 @@ def main():
     st.markdown("---")
     st.subheader("Generated samples")
     
-    samples_dir = Path('data/outputs/samples')
-    sample_images = get_sample_images(samples_dir)
+    # Fetch sample images from database (accessible to all dashboards)
+    sample_images = db.get_sample_images()
     
     if sample_images:
         # Create dropdown to select iteration
-        iterations = [img[0] for img in sample_images]
+        iterations = [img['iteration'] for img in sample_images]
         
         col1, col2 = st.columns([1, 3])
         with col1:
@@ -191,14 +192,16 @@ def main():
             )
         
         # Find and display the selected image
-        selected_path = None
-        for iteration, path in sample_images:
-            if iteration == selected_iteration:
-                selected_path = path
+        selected_image = None
+        for img in sample_images:
+            if img['iteration'] == selected_iteration:
+                selected_image = img
                 break
         
-        if selected_path:
-            st.image(str(selected_path), caption=f"Iteration {selected_iteration}", width='stretch')
+        if selected_image and selected_image['image_blob']:
+            st.image(io.BytesIO(selected_image['image_blob']), 
+                    caption=f"Iteration {selected_iteration} (Epoch {selected_image['epoch'] + 1})", 
+                    use_container_width=True)
     else:
         st.info("No sample images yet. Samples are generated during training.")
     

@@ -4,6 +4,7 @@ Handles all database operations and connections.
 """
 
 import io
+import zlib
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from contextlib import contextmanager
@@ -15,7 +16,7 @@ from sqlalchemy.pool import NullPool
 
 from .schema import (
     Base, ModelWeights, OptimizerState, Gradients, 
-    WorkUnit, TrainingState, Worker, LossHistory
+    WorkUnit, TrainingState, Worker, LossHistory, SampleImage
 )
 
 
@@ -72,7 +73,9 @@ class DatabaseManager:
         """
         buffer = io.BytesIO()
         torch.save(state_dict, buffer)
-        weights_blob = buffer.getvalue()
+        raw_data = buffer.getvalue()
+        # Compress for faster network transfer
+        weights_blob = zlib.compress(raw_data, level=6)
         
         with self.get_session() as session:
             weights = ModelWeights(
@@ -97,7 +100,11 @@ class DatabaseManager:
             ).order_by(ModelWeights.iteration.desc()).first()
             
             if weights:
-                return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
+                # Handle both compressed and uncompressed (backward compatibility)
+                try:
+                    return torch.load(io.BytesIO(zlib.decompress(weights.weights_blob)), map_location='cpu')
+                except zlib.error:
+                    return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
             return None
     
     def get_model_weights_at_iteration(self, model_type: str, iteration: int) -> Optional[Dict[str, torch.Tensor]]:
@@ -119,7 +126,11 @@ class DatabaseManager:
             ).first()
             
             if weights:
-                return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
+                # Handle both compressed and uncompressed (backward compatibility)
+                try:
+                    return torch.load(io.BytesIO(zlib.decompress(weights.weights_blob)), map_location='cpu')
+                except zlib.error:
+                    return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
             return None
     
     # ==================== Optimizer State ====================
@@ -134,7 +145,9 @@ class DatabaseManager:
         """
         buffer = io.BytesIO()
         torch.save(state_dict, buffer)
-        state_blob = buffer.getvalue()
+        raw_data = buffer.getvalue()
+        # Compress for faster network transfer
+        state_blob = zlib.compress(raw_data, level=6)
         
         with self.get_session() as session:
             optimizer_state = OptimizerState(
@@ -159,7 +172,11 @@ class DatabaseManager:
             ).order_by(OptimizerState.iteration.desc()).first()
             
             if state:
-                return torch.load(io.BytesIO(state.state_blob), map_location='cpu')
+                # Handle both compressed and uncompressed (backward compatibility)
+                try:
+                    return torch.load(io.BytesIO(zlib.decompress(state.state_blob)), map_location='cpu')
+                except zlib.error:
+                    return torch.load(io.BytesIO(state.state_blob), map_location='cpu')
             return None
     
     # ==================== Gradients ====================
@@ -183,9 +200,13 @@ class DatabaseManager:
             gradients: Dictionary of parameter gradients
             num_samples: Number of samples used to compute gradients
         """
+        # Serialize gradients
         buffer = io.BytesIO()
         torch.save(gradients, buffer)
-        gradients_blob = buffer.getvalue()
+        raw_data = buffer.getvalue()
+        
+        # Compress with zlib (typically 50-80% reduction)
+        gradients_blob = zlib.compress(raw_data, level=6)
         
         with self.get_session() as session:
             grad = Gradients(
@@ -227,12 +248,45 @@ class DatabaseManager:
             
             results = query.all()
             
-            return [{
-                'worker_id': g.worker_id,
-                'gradients': torch.load(io.BytesIO(g.gradients_blob), map_location='cpu'),
-                'num_samples': g.num_samples,
-                'work_unit_id': g.work_unit_id
-            } for g in results]
+            output = []
+            for g in results:
+                # Handle both compressed and uncompressed gradients (backward compatibility)
+                try:
+                    gradients = torch.load(io.BytesIO(zlib.decompress(g.gradients_blob)), map_location='cpu')
+                except zlib.error:
+                    # Fallback: uncompressed data (old format)
+                    gradients = torch.load(io.BytesIO(g.gradients_blob), map_location='cpu')
+                
+                output.append({
+                    'worker_id': g.worker_id,
+                    'gradients': gradients,
+                    'num_samples': g.num_samples,
+                    'work_unit_id': g.work_unit_id
+                })
+            
+            return output
+    
+    def count_gradients_for_iteration(self, model_type: str, iteration: int) -> int:
+        """Count gradients for a specific iteration WITHOUT loading blob data.
+        
+        This is much more efficient than get_gradients_for_iteration when only
+        the count is needed (avoids loading potentially gigabytes of tensor data).
+        
+        Args:
+            model_type: 'generator' or 'discriminator'
+            iteration: Training iteration
+            
+        Returns:
+            Number of gradient records for this iteration
+        """
+        with self.get_session() as session:
+            count = session.query(Gradients).filter(
+                and_(
+                    Gradients.model_type == model_type,
+                    Gradients.iteration == iteration
+                )
+            ).count()
+            return count
     
     def delete_gradients_for_iteration(self, iteration: int):
         """Delete all gradients for a specific iteration (cleanup after aggregation)."""
@@ -622,3 +676,76 @@ class DatabaseManager:
                 'last_heartbeat': w.last_heartbeat,
                 'created_at': w.created_at
             } for w in workers]
+    
+    # ==================== Sample Images ====================
+    
+    def save_sample_image(self, iteration: int, epoch: int, image_data: bytes):
+        """Save a sample image to the database.
+        
+        Args:
+            iteration: Training iteration number
+            epoch: Current epoch number
+            image_data: PNG image data as bytes
+        """
+        with self.get_session() as session:
+            # Check if image for this iteration already exists
+            existing = session.query(SampleImage).filter(
+                SampleImage.iteration == iteration
+            ).first()
+            
+            if existing:
+                # Update existing
+                existing.epoch = epoch
+                existing.image_blob = image_data
+            else:
+                # Create new
+                sample = SampleImage(
+                    iteration=iteration,
+                    epoch=epoch,
+                    image_blob=image_data
+                )
+                session.add(sample)
+    
+    def get_sample_images(self, limit: int = None) -> List[Dict[str, Any]]:
+        """Get sample images from database.
+        
+        Args:
+            limit: Maximum number of images to return (newest first)
+            
+        Returns:
+            List of dicts with iteration, epoch, image_blob, created_at
+        """
+        with self.get_session() as session:
+            query = session.query(SampleImage).order_by(
+                SampleImage.iteration.desc()
+            )
+            
+            if limit:
+                query = query.limit(limit)
+            
+            results = query.all()
+            
+            return [{
+                'iteration': s.iteration,
+                'epoch': s.epoch,
+                'image_blob': s.image_blob,
+                'created_at': s.created_at
+            } for s in results]
+    
+    def get_sample_image(self, iteration: int) -> Optional[bytes]:
+        """Get a specific sample image by iteration.
+        
+        Args:
+            iteration: Training iteration number
+            
+        Returns:
+            PNG image data as bytes, or None if not found
+        """
+        with self.get_session() as session:
+            sample = session.query(SampleImage).filter(
+                SampleImage.iteration == iteration
+            ).first()
+            
+            if sample:
+                return sample.image_blob
+            return None

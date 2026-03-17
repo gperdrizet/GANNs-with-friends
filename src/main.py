@@ -122,14 +122,19 @@ class MainCoordinator:
         print('\nInitializing training state...')
         
         # Save initial model weights
+        print('  Saving generator weights...')
         self.db.save_model_weights('generator', 0, self.generator.state_dict())
+        print('  Saving discriminator weights...')
         self.db.save_model_weights('discriminator', 0, self.discriminator.state_dict())
         
         # Save initial optimizer states
+        print('  Saving generator optimizer state...')
         self.db.save_optimizer_state('generator', 0, self.optimizer_g.state_dict())
+        print('  Saving discriminator optimizer state...')
         self.db.save_optimizer_state('discriminator', 0, self.optimizer_d.state_dict())
         
         # Reset training state
+        print('  Resetting training state...')
         self.db.update_training_state(
             current_iteration=0,
             current_epoch=0,
@@ -204,10 +209,11 @@ class MainCoordinator:
                     return True
                 
                 # Check if we have minimum number of work unit gradients
-                gen_gradients = self.db.get_gradients_for_iteration('generator', iteration)
+                # Use efficient count method to avoid loading gigabytes of gradient data
+                gradient_count = self.db.count_gradients_for_iteration('generator', iteration)
 
-                if len(gen_gradients) >= self.min_workunits_per_update:
-                    print(f'Minimum threshold reached: {len(gen_gradients)} work unit gradients collected')
+                if gradient_count >= self.min_workunits_per_update:
+                    print(f'Minimum threshold reached: {gradient_count} work unit gradients collected')
                     return True
             
             except OperationalError as e:
@@ -275,20 +281,28 @@ class MainCoordinator:
         
         print('Models updated successfully!')
     
-    def generate_samples(self, iteration: int):
-        """Generate and save sample images.
+    def generate_samples(self, iteration: int, epoch: int = 0):
+        """Generate and save sample images (locally and to database).
         
         Args:
             iteration: Current training iteration
+            epoch: Current epoch number
         """
         self.generator.eval()
         with torch.no_grad():
             fake_images = self.generator(self.fixed_noise)
         self.generator.train()
         
+        # Save locally
         output_path = self.samples_dir / f'iteration_{iteration:06d}.png'
         save_generated_images(fake_images, str(output_path))
         print(f'Saved sample images to {output_path}')
+        
+        # Save to database for remote dashboards
+        with open(output_path, 'rb') as f:
+            image_data = f.read()
+        self.db.save_sample_image(iteration, epoch, image_data)
+        print(f'Saved sample images to database')
         
         return output_path
     
@@ -361,19 +375,47 @@ class MainCoordinator:
                     samples_path=samples_path
                 )
     
-    def run(self, num_epochs: int = 50, sample_interval: int = 100):
+    def run(self, num_epochs: int = 50, sample_interval: int = 100, init_training: bool = False):
         """Run main training loop.
         
         Args:
             num_epochs: Number of epochs to train
             sample_interval: Generate samples every N iterations
+            init_training: Whether to initialize training state (resets progress)
         """
         print('\n' + '='*70)
         print('Starting Distributed GAN Training')
         print('='*70)
         
-        # Initialize training
-        self.initialize_training()
+        # Check existing training state
+        training_state = self.db.get_training_state()
+        
+        if init_training:
+            # Initialize (reset) training state
+            self.initialize_training()
+            iteration = 0
+            start_epoch = 0
+        elif training_state and training_state.get('training_active'):
+            # Resume from existing training state
+            iteration = training_state.get('current_iteration', 0)
+            start_epoch = training_state.get('current_epoch', 0)
+            print(f'\nResuming training from iteration {iteration}, epoch {start_epoch}')
+            
+            # Load model weights from database
+            print('  Loading latest model weights...')
+            gen_weights = self.db.get_latest_model_weights('generator')
+            disc_weights = self.db.get_latest_model_weights('discriminator')
+            if gen_weights:
+                self.generator.load_state_dict(gen_weights)
+            if disc_weights:
+                self.discriminator.load_state_dict(disc_weights)
+            print('  Model weights loaded!')
+        else:
+            # No active training and no --init flag - initialize by default
+            print('\nNo active training found. Initializing...')
+            self.initialize_training()
+            iteration = 0
+            start_epoch = 0
         
         # Calculate total iterations per epoch
         work_units_per_epoch = self.dataset_size // self.images_per_work_unit
@@ -385,10 +427,8 @@ class MainCoordinator:
         print(f'  Work units per epoch: {work_units_per_epoch}')
         print(f'  Min work units per update: {self.min_workunits_per_update}')
         
-        iteration = 0
-        
         try:
-            for epoch in range(num_epochs):
+            for epoch in range(start_epoch, num_epochs):
                 print(f"\n{'='*70}")
                 print(f'Epoch {epoch + 1}/{num_epochs}')
                 print('='*70)
@@ -432,7 +472,7 @@ class MainCoordinator:
                 # Generate sample images periodically
                 if iteration % sample_interval == 0:
                     print('\nGenerating sample images...')
-                    samples_path = self.generate_samples(iteration)
+                    samples_path = self.generate_samples(iteration, epoch)
                     
                     # Push to Hugging Face Hub if enabled
                     self.push_to_hub(iteration, epoch, str(samples_path))
@@ -459,7 +499,7 @@ class MainCoordinator:
             
             # Generate final samples
             print('Generating final samples...')
-            self.generate_samples(iteration)
+            self.generate_samples(iteration, epoch if 'epoch' in dir() else 0)
             
             # Print final statistics
             print('\n' + '='*70)
@@ -511,7 +551,11 @@ def main():
     coordinator = MainCoordinator(config_path=args.config, gpu_id=args.gpu)
     
     # Run training
-    coordinator.run(num_epochs=args.epochs, sample_interval=args.sample_interval)
+    coordinator.run(
+        num_epochs=args.epochs,
+        sample_interval=args.sample_interval,
+        init_training=args.init
+    )
 
 
 if __name__ == '__main__':
