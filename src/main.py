@@ -204,10 +204,10 @@ class MainCoordinator:
                     return True
                 
                 # Check if we have minimum number of work unit gradients
-                gen_gradients = self.db.get_gradients_for_iteration('generator', iteration)
+                gen_gradient_count = self.db.count_gradients_for_iteration('generator', iteration)
 
-                if len(gen_gradients) >= self.min_workunits_per_update:
-                    print(f'Minimum threshold reached: {len(gen_gradients)} work unit gradients collected')
+                if gen_gradient_count >= self.min_workunits_per_update:
+                    print(f'Minimum threshold reached: {gen_gradient_count} work unit gradients collected')
                     return True
             
             except OperationalError as e:
@@ -263,6 +263,12 @@ class MainCoordinator:
         self.db.save_model_weights('discriminator', next_iteration, self.discriminator.state_dict())
         self.db.save_optimizer_state('generator', next_iteration, self.optimizer_g.state_dict())
         self.db.save_optimizer_state('discriminator', next_iteration, self.optimizer_d.state_dict())
+        
+        # Prune old weights and optimizer states (keep only the 2 most recent iterations)
+        self.db.delete_old_model_weights('generator')
+        self.db.delete_old_model_weights('discriminator')
+        self.db.delete_old_optimizer_states('generator')
+        self.db.delete_old_optimizer_states('discriminator')
         
         # Clean up gradients from database
         self.db.delete_gradients_for_iteration(iteration)

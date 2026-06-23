@@ -47,26 +47,26 @@ The system consists of four main components:
 ## High-level architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Coordinator (Instructor)                     │
+┌────────────────────────────────────────────────────────────────┐
+│                     Coordinator (Instructor)                   │
 │  ┌──────────────┐   ┌───────────────┐   ┌───────────────────┐  │
 │  │ Create Work  │   │   Aggregate   │   │  Optimizer Step   │  │
 │  │ Units (320   │ → │   Gradients   │ → │  & Save Weights   │  │
 │  │ images each) │   │ (wait for 3)  │   │  to Database      │  │
 │  └──────────────┘   └───────────────┘   └───────────────────┘  │
-│          │                  ↑                     │              │
-└──────────┼──────────────────┼─────────────────────┼─────────────┘
+│          │                  ↑                     │            │
+└──────────┼──────────────────┼─────────────────────┼────────────┘
            ↓                  │                     ↓
-┌─────────────────────────────────────────────────────────────────┐
-│                      PostgreSQL Database                         │
-│                     (perdrizet.org:54321)                        │
+┌────────────────────────────────────────────────────────────────┐
+│                      PostgreSQL Database                       │
+│                     (perdrizet.org:54321)                      │
 │  ┌───────────┐  ┌───────────┐  ┌──────────┐  ┌──────────────┐  │
 │  │   Work    │  │ Gradients │  │  Model   │  │  Training    │  │
 │  │   Units   │  │ (per work │  │ Weights  │  │    State     │  │
 │  │ (pending/ │  │   unit)   │  │ (G + D)  │  │ (iteration,  │  │
 │  │ claimed)  │  │           │  │          │  │  epoch)      │  │
 │  └───────────┘  └───────────┘  └──────────┘  └──────────────┘  │
-└──────────┬──────────────┬───────────────────────┬───────────────┘
+└──────────┬──────────────┬───────────────────────┬──────────────┘
            │              │                       │
            │              │ (poll & claim)        │ (download weights)
            ↓              ↓                       ↓
@@ -116,11 +116,11 @@ Worker polls database
 ├─> Download current model weights from database
 ├─> Load assigned images from CelebA dataset
 ├─> Process images in batches (batch_size from worker config)
-│   ├─> For each batch:
-│   │   ├─> Train discriminator on real images
-│   │   ├─> Train discriminator on fake images
-│   │   ├─> Train generator to fool discriminator
-│   │   └─> Accumulate gradients
+│   └─> For each batch:
+│       ├─> Train discriminator on real images
+│       ├─> Train discriminator on fake images
+│       ├─> Train generator to fool discriminator
+│       └─> Accumulate gradients
 ├─> Average accumulated gradients
 ├─> Upload gradients to database
 └─> Mark work unit as completed

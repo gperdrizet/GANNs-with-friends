@@ -4,14 +4,15 @@ Handles all database operations and connections.
 """
 
 import io
+import zlib
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 
 import torch
-from sqlalchemy import create_engine, and_, or_
+from sqlalchemy import create_engine, and_, or_, func
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import NullPool
+from sqlalchemy.pool import QueuePool
 
 from .schema import (
     Base, ModelWeights, OptimizerState, Gradients, 
@@ -30,10 +31,13 @@ class DatabaseManager:
         """
         self.engine = create_engine(
             db_url,
-            poolclass=NullPool,  # No connection pooling for simplicity
-            pool_pre_ping=True,  # Verify connections before using
+            poolclass=QueuePool,
+            pool_size=2,         # Persistent connections per worker
+            max_overflow=3,      # Burst connections
+            pool_pre_ping=True,  # Verify connections before using (handles dropped Tailscale conns)
+            pool_recycle=3600,   # Recycle connections hourly
             connect_args={
-                'options': '-c statement_timeout=0'  # Disable statement timeout
+                'options': '-c statement_timeout=0'  # Disable statement timeout for long uploads
             }
         )
         self.SessionLocal = sessionmaker(bind=self.engine)
@@ -72,7 +76,7 @@ class DatabaseManager:
         """
         buffer = io.BytesIO()
         torch.save(state_dict, buffer)
-        weights_blob = buffer.getvalue()
+        weights_blob = zlib.compress(buffer.getvalue())
         
         with self.get_session() as session:
             weights = ModelWeights(
@@ -97,7 +101,7 @@ class DatabaseManager:
             ).order_by(ModelWeights.iteration.desc()).first()
             
             if weights:
-                return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
+                return torch.load(io.BytesIO(zlib.decompress(weights.weights_blob)), map_location='cpu')
             return None
     
     def get_model_weights_at_iteration(self, model_type: str, iteration: int) -> Optional[Dict[str, torch.Tensor]]:
@@ -119,8 +123,29 @@ class DatabaseManager:
             ).first()
             
             if weights:
-                return torch.load(io.BytesIO(weights.weights_blob), map_location='cpu')
+                return torch.load(io.BytesIO(zlib.decompress(weights.weights_blob)), map_location='cpu')
             return None
+    
+    def delete_old_model_weights(self, model_type: str, keep_latest: int = 2):
+        """Delete old model weights, keeping only the most recent iterations.
+        
+        Args:
+            model_type: 'generator' or 'discriminator'
+            keep_latest: Number of most recent iterations to keep (default: 2)
+        """
+        with self.get_session() as session:
+            cutoff = (
+                session.query(ModelWeights.iteration)
+                .filter(ModelWeights.model_type == model_type)
+                .order_by(ModelWeights.iteration.desc())
+                .offset(keep_latest)
+                .first()
+            )
+            if cutoff:
+                session.query(ModelWeights).filter(
+                    ModelWeights.model_type == model_type,
+                    ModelWeights.iteration <= cutoff.iteration
+                ).delete()
     
     # ==================== Optimizer State ====================
     
@@ -134,7 +159,7 @@ class DatabaseManager:
         """
         buffer = io.BytesIO()
         torch.save(state_dict, buffer)
-        state_blob = buffer.getvalue()
+        state_blob = zlib.compress(buffer.getvalue())
         
         with self.get_session() as session:
             optimizer_state = OptimizerState(
@@ -159,8 +184,29 @@ class DatabaseManager:
             ).order_by(OptimizerState.iteration.desc()).first()
             
             if state:
-                return torch.load(io.BytesIO(state.state_blob), map_location='cpu')
+                return torch.load(io.BytesIO(zlib.decompress(state.state_blob)), map_location='cpu')
             return None
+    
+    def delete_old_optimizer_states(self, model_type: str, keep_latest: int = 2):
+        """Delete old optimizer states, keeping only the most recent iterations.
+        
+        Args:
+            model_type: 'generator' or 'discriminator'
+            keep_latest: Number of most recent iterations to keep (default: 2)
+        """
+        with self.get_session() as session:
+            cutoff = (
+                session.query(OptimizerState.iteration)
+                .filter(OptimizerState.model_type == model_type)
+                .order_by(OptimizerState.iteration.desc())
+                .offset(keep_latest)
+                .first()
+            )
+            if cutoff:
+                session.query(OptimizerState).filter(
+                    OptimizerState.model_type == model_type,
+                    OptimizerState.iteration <= cutoff.iteration
+                ).delete()
     
     # ==================== Gradients ====================
     
@@ -185,7 +231,7 @@ class DatabaseManager:
         """
         buffer = io.BytesIO()
         torch.save(gradients, buffer)
-        gradients_blob = buffer.getvalue()
+        gradients_blob = zlib.compress(buffer.getvalue())
         
         with self.get_session() as session:
             grad = Gradients(
@@ -229,7 +275,7 @@ class DatabaseManager:
             
             return [{
                 'worker_id': g.worker_id,
-                'gradients': torch.load(io.BytesIO(g.gradients_blob), map_location='cpu'),
+                'gradients': torch.load(io.BytesIO(zlib.decompress(g.gradients_blob)), map_location='cpu'),
                 'num_samples': g.num_samples,
                 'work_unit_id': g.work_unit_id
             } for g in results]
@@ -240,6 +286,29 @@ class DatabaseManager:
             session.query(Gradients).filter(
                 Gradients.iteration == iteration
             ).delete()
+    
+    def count_gradients_for_iteration(self, model_type: str, iteration: int) -> int:
+        """Count gradients uploaded for an iteration without loading the blobs.
+        
+        Use this instead of get_gradients_for_iteration when you only need the
+        count (e.g., polling to check if enough workers have submitted).
+        
+        Args:
+            model_type: 'generator' or 'discriminator'
+            iteration: Training iteration
+            
+        Returns:
+            Number of gradient rows
+        """
+        with self.get_session() as session:
+            return (
+                session.query(func.count(Gradients.id))
+                .filter(
+                    Gradients.model_type == model_type,
+                    Gradients.iteration == iteration
+                )
+                .scalar()
+            )
     
     # ==================== Work Units ====================
     
@@ -357,21 +426,16 @@ class DatabaseManager:
             Dictionary with counts for each status
         """
         with self.get_session() as session:
-            work_units = session.query(WorkUnit).filter(
-                WorkUnit.iteration == iteration
-            ).all()
-            
-            stats = {
-                'pending': 0,
-                'claimed': 0,
-                'completed': 0,
-                'failed': 0,
-                'total': len(work_units)
-            }
-            
-            for wu in work_units:
-                stats[wu.status] = stats.get(wu.status, 0) + 1
-            
+            rows = (
+                session.query(WorkUnit.status, func.count().label('count'))
+                .filter(WorkUnit.iteration == iteration)
+                .group_by(WorkUnit.status)
+                .all()
+            )
+            stats = {'pending': 0, 'claimed': 0, 'completed': 0, 'failed': 0, 'cancelled': 0, 'total': 0}
+            for status, count in rows:
+                stats[status] = count
+                stats['total'] += count
             return stats
     
     # ==================== Training State ====================
